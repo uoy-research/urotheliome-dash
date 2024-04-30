@@ -25,7 +25,7 @@ import plotly.graph_objects as go
 
 def plt_scatter(df, selected_points, known_markers=False):
     """
-    Creates teh scatter plot
+    Creates the scatter plot
 
     Args:
         df (DataFrame): Thee data to be plotted
@@ -49,13 +49,12 @@ def plt_scatter(df, selected_points, known_markers=False):
 
     if known_markers:
         custom_traces = shared.create_custom_traces()
-        colors =  px.colors.qualitative.Vivid + px.colors.qualitative.Bold
         marker_size = 12
         for idx, trace in enumerate(custom_traces): 
             selected_df = df[df["genes"].isin(trace["genes"])]
 
-            markers = {"size": marker_size, "color": selected_df.shape[0] * [colors[idx]], "symbol": "x"}
-            trace = dict(type='scatter', x=selected_df[clusters[0]], y=selected_df[clusters[1]],  showlegend=True, marker=markers, text=selected_df["genes"], mode="markers+text" , name=trace["title"],  textposition="top right")
+            markers = {"size": marker_size, "color": selected_df.shape[0] * [shared.colors[idx]], "symbol": "x"}
+            trace = dict(type='scatter', x=selected_df[clusters[0]], y=selected_df[clusters[1]],  showlegend=True, marker=markers, text=selected_df["genes"], mode="markers+text" , name=trace["title"],  textposition="top right", visible="legendonly")
 
             fig.add_trace(trace)
 
@@ -157,7 +156,7 @@ def significant_genes (row, labels):
 
 def add_sig(df):
     """ 
-    Functions that classifies the genes if are significant to one of the groups comparede in the DEA.
+    Functions that classifies the genes if are significant to one of the groups compared in the DEA.
 
     Args:
         df (DataFrame): The data used
