@@ -1,8 +1,10 @@
 dash==2.16.1
 dash-bio==1.0.2
 flask==3.0.3
+gunicorn==22.0.0
 numpy==1.26.4
 pandas==2.2.2
 plotly==5.21.0
+pyarrow==16.0.0 
 python-dotenv==1.0.1
 umap-learn==0.5.6
