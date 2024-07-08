@@ -132,6 +132,7 @@ dmypy.json
 keys/
 saved_data/
 JBU_data/
+data/
 exported_data/
 # g_drive/
 
