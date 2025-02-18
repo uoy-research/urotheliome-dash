@@ -2,75 +2,65 @@ CREATE TABLE NHU (
     nhu_differentiation TEXT PRIMARY KEY
 );
 
-
-CREATE TABLE Subset (
-    subset_name TEXT PRIMARY KEY,
-    nhu_differentiation TEXT NOT NULL,
-    FOREIGN KEY (nhu_differentiation) REFERENCES NHU(nhu_differentiation)
+CREATE TABLE Dataset_Subset (
+    subset_name TEXT PRIMARY KEY
 );
-
 
 CREATE TABLE Dataset (
     dataset_name TEXT PRIMARY KEY
 );
 
-
 CREATE TABLE Tissue (
     tissue_name TEXT PRIMARY KEY
 );
-
 
 CREATE TABLE Substrate (
     substrate_type TEXT PRIMARY KEY
 );
 
-
 CREATE TABLE Gender (
-    gender TEXT PRIMARY KEY CHECK (LENGTH(gender) = 1)
+    gender TEXT PRIMARY KEY
 );
-
 
 CREATE TABLE Tumor_Stage (
     stage TEXT PRIMARY KEY
 );
 
-
 CREATE TABLE Vital_Status (
     status TEXT PRIMARY KEY
 );
 
-
-CREATE TABLE Samples (
+CREATE TABLE Sample (
     sample_id TEXT PRIMARY KEY,
     subset_name TEXT,
     dataset_name TEXT,
     tissue_name TEXT,
     substrate_type TEXT,
-    TER FLOAT,
     gender TEXT,
     tumor_stage TEXT,
     vital_status TEXT,
+    nhu_differentiation TEXT,
+    TER REAL,
     days_to_death INT,
-    FOREIGN KEY (subset_name) REFERENCES Subset(subset_name),
+    FOREIGN KEY (subset_name) REFERENCES Dataset_Subset(subset_name),
     FOREIGN KEY (dataset_name) REFERENCES Dataset(dataset_name),
     FOREIGN KEY (tissue_name) REFERENCES Tissue(tissue_name),
     FOREIGN KEY (substrate_type) REFERENCES Substrate(substrate_type),
     FOREIGN KEY (gender) REFERENCES Gender(gender),
     FOREIGN KEY (tumor_stage) REFERENCES Tumor_Stage(stage),
-    FOREIGN KEY (vital_status) REFERENCES Vital_Status(status)
+    FOREIGN KEY (vital_status) REFERENCES Vital_Status(status),
+    FOREIGN KEY (nhu_differentiation) REFERENCES NHU(nhu_differentiation)
 );
 
-
-CREATE TABLE Genes (
+CREATE TABLE Gene (
     gene_name TEXT PRIMARY KEY
 );
-
 
 CREATE TABLE Gene_Expression (
     sample_id TEXT,
     gene_name TEXT,
-    TPM FLOAT NOT NULL,
+    TPM REAL NOT NULL,
     PRIMARY KEY (sample_id, gene_name),
-    FOREIGN KEY (sample_id) REFERENCES Samples(sample_id),
-    FOREIGN KEY (gene_name) REFERENCES Genes(gene_name)
+    FOREIGN KEY (sample_id) REFERENCES Sample(sample_id),
+    FOREIGN KEY (gene_name) REFERENCES Gene(gene_name)
 );
