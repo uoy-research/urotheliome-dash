@@ -18,10 +18,14 @@ h1 {
     flex-direction: column;
     gap: 20px;
     background-color: white;
-    border-radius: 8px;
+    border-top-left-radius: 0px;
+    border-top-right-radius: 0px;
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     padding: 24px;
     margin-bottom: 20px;
+    padding-top: 40px;
 }
 
 /* Left side of control panel */
@@ -108,7 +112,7 @@ h1 {
     align-items: center;
     gap: 8px;
     margin-bottom: 20px;
-    min-height: 160px;
+    min-height: 100px;
 }
 
 .loading-container {

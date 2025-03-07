@@ -15,7 +15,7 @@ Interactive dashboard for visualizing JBU gene expression data using Dash and SQ
 ```
 urotheliome-dash/
 ├── app.py                       # Application entry point
-├── urotheliome_data_indexed.db  # indexed SQLite database
+├── UrotheliomeData.db           # indexed SQLite database
 ├── urotheliome_data_2.db        # old unindexed SQLite database
 ├── assets/                      # CSS styles / images
 ├── callbacks/                   # Function callbacks (update ui based on user input)
