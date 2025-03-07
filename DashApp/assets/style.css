@@ -1,0 +1,144 @@
+body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background-color: #f5f5f5;
+    margin: 0;
+    padding: 20px;
+    color: #333;
+}
+
+h1 {
+    color: #2c3e50;
+    font-weight: 500;
+    margin-bottom: 40px;
+}
+
+/* Control panel styles */
+.control-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    padding: 24px;
+    margin-bottom: 20px;
+}
+
+/* Left side of control panel */
+.left-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.dropdown-container {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+}
+
+.dropdown-section {
+    flex: 1;
+    min-width: 300px;
+}
+
+.dropdown-label {
+    font-size: 14px;
+    font-weight: 500;
+    color: #4a5568;
+    margin-bottom: 8px;
+    display: block;
+}
+
+.dropdown {
+    width: 100%;
+    margin-bottom: 0;
+}
+
+/* Dataset radio styles */
+.dataset-radio-group {
+    margin-bottom: 16px;
+    column-count: 3;
+}
+
+.dataset-radio-group label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.dataset-radio-group label:hover {
+    background-color: #f7fafc;
+}
+
+.dataset-radio-group input[type="radio"] {
+    margin-right: 8px;
+}
+
+.dataset-controls {
+    display: flex;
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.dataset-control-btn {
+    padding: 8px 16px;
+    background-color: #edf2f7;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    color: #4a5568;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s;
+}
+
+.dataset-control-btn:hover {
+    background-color: #e2e8f0;
+    color: #2d3748;
+}
+
+/* Status section styles */
+.status-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 20px;
+    min-height: 160px;
+}
+
+.loading-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 40px;
+}
+
+.error-message {
+    color: #e53e3e;
+    text-align: center;
+    padding: 0px;
+    margin: 0;
+    font-size: 14px;
+    border-radius: 4px;
+    background-color: rgba(229, 62, 62, 0.1);
+    max-width: 600px;
+}
+
+/* Plot container styles */
+.plot-container {
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    padding: 24px;
+}
+
+.graph {
+    width: 100%;
+    height: 600px;
+    margin-top: 20px;
+}
