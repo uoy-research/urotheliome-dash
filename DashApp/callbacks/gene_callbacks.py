@@ -341,6 +341,7 @@ def register_callbacks(app) -> None:
                 x_values = merged_data[f'{gene1}_TPM'].values
                 y_values = merged_data[f'{gene2}_TPM'].values
                 
+                # Ordinary least squares regression using linregress
                 # Only calculate regression if we have enough data points
                 if len(x_values) > 1:
                     slope, intercept, r_value, p_value, std_err = stats.linregress(x_values, y_values)
