@@ -1,4 +1,5 @@
 from dash import dcc, html
+import dash_bootstrap_components as dbc
 from data.fetch_names import fetch_datasets
 
 def dataset_radio():
@@ -12,31 +13,36 @@ def dataset_radio():
             options=radio_options,
             value=[],  # No default value
             labelStyle={'display': 'block', 'margin-bottom': '10px'},
-            className="dataset-radio-group"
+            className="dataset-radio-group mb-3"
         ),
         
         # Select All and Clear buttons
-        html.Div([
-            html.Button(
+        dbc.ButtonGroup([
+            dbc.Button(
                 "Select All Datasets",
                 id="select-all-datasets",
                 n_clicks=0,
-                className="dataset-control-btn"
+                color="primary",
+                outline=True,
+                size="sm",
+                className="me-2"
             ),
-            html.Button(
+            dbc.Button(
                 "Clear Selection",
                 id="clear-datasets",
                 n_clicks=0,
-                className="dataset-control-btn"
+                color="secondary",
+                outline=True,
+                size="sm"
             )
-        ], className="dataset-controls")
+        ], className="mb-3")
     ])
 
 # Plot type radio buttons
 def plot_type_radio():
     return html.Div([
-        html.Label("Select Plot Type", className="dropdown-label"),
-        dcc.RadioItems(
+        html.Label("Select Plot Type", className="mb-2"),
+        dbc.RadioItems(
             id="plot-type-radio",
             options=[
                 {"label": "Scatter", "value": "strip"},
@@ -46,6 +52,7 @@ def plot_type_radio():
                 {"label": "Box and Points", "value": "box+points"}
             ],
             value="strip",
-            className="plot-type-group"
+            inline=True,
+            className="mb-3"
         )
     ])

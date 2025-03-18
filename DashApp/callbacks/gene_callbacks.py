@@ -6,47 +6,12 @@ from data.fetch_data import fetch_gene_expression_data
 from typing import Dict, Any, Tuple, List
 import numpy as np
 from scipy import stats
-import pandas as pd
 
 def register_callbacks(app) -> None:
     """Register all callbacks for the application"""
     
-    @app.callback(
-        [
-            Output("gene-dropdown-container", "style"),
-            Output("xaxis-dropdown-container", "style"),
-            Output("plot-type-container", "style"),
-            Output("gene1-dropdown-container", "style"),
-            Output("gene2-dropdown-container", "style"),
-            Output("gene-expression-plot-container", "style"),
-            Output("gene-comparison-plot-container", "style"),
-        ],
-        Input("tabs", "value")
-    )
-    def toggle_visualization_mode(selected_tab: str) -> List[Dict[str, Any]]:
-        """Toggle visibility of UI components based on the selected tab"""
-        if selected_tab == "gene-visualization":
-            # Show Gene Visualization, hide Gene Comparison
-            return (
-                {"display": "block"},  # gene-dropdown-container
-                {"display": "block"},  # xaxis-dropdown-container
-                {"display": "block"},  # plot-type-container
-                {"display": "none"},   # gene1-dropdown-container
-                {"display": "none"},   # gene2-dropdown-container
-                {"display": "block"},  # gene-expression-plot-container
-                {"display": "none"}    # gene-comparison-plot-container
-            )
-        else:  # "gene-comparison"
-            # Hide Gene Visualization, show Gene Comparison
-            return (
-                {"display": "none"},   # gene-dropdown-container
-                {"display": "none"},   # xaxis-dropdown-container
-                {"display": "none"},   # plot-type-container
-                {"display": "block"},  # gene1-dropdown-container
-                {"display": "block"},  # gene2-dropdown-container
-                {"display": "none"},   # gene-expression-plot-container
-                {"display": "block"}   # gene-comparison-plot-container
-            )
+    # The toggle_visualization_mode callback is no longer needed because we're using Bootstrap tabs with content inside
+    # each tab, so components are automatically shown/hidden based on which tab is active
     
     @app.callback(
         Output("dataset-radio", "value"),
@@ -69,19 +34,63 @@ def register_callbacks(app) -> None:
         elif button_id == "clear-datasets":
             return []
         return no_update
+
+    # Add a callback to clear error messages when selections change
+    @app.callback(
+        [Output("error-alert", "children"),
+         Output("error-alert", "is_open")],
+        [Input("dataset-radio", "value"),
+         Input("gene-dropdown", "value"),
+         Input("gene-comparison-dropdown-1", "value"),
+         Input("gene-comparison-dropdown-2", "value"),
+         Input("tabs", "active_tab")],
+        [State("viz-error-state", "data"),
+         State("comp-error-state", "data")],
+        prevent_initial_call=True
+    )
+    def manage_error_messages(selected_datasets, selected_genes, gene1, gene2, active_tab, viz_error, comp_error):
+        """Manage error messages based on selection changes and active tab"""
+        ctx = callback_context
+        if not ctx.triggered:
+            return no_update, no_update
+        
+        trigger = ctx.triggered[0]['prop_id'].split('.')[0]
+        
+        # If tab changes, show the error for the current tab (if any)
+        if trigger == "tabs":
+            if active_tab == "gene-visualization" and viz_error:
+                return viz_error, True
+            elif active_tab == "gene-comparison" and comp_error:
+                return comp_error, True
+            return "", False
+        
+        # Clear the appropriate error based on which input triggered the callback
+        if trigger == "dataset-radio":
+            # Dataset changes affect both tabs, so clear all errors
+            return "", False
+        elif trigger == "gene-dropdown" and active_tab == "gene-visualization":
+            # Clear visualization error
+            return "", False
+        elif trigger in ["gene-comparison-dropdown-1", "gene-comparison-dropdown-2"] and active_tab == "gene-comparison":
+            # Clear comparison error
+            return "", False
+        
+        return no_update, no_update
     
     @app.callback(
         output=[
             Output("gene-expression-plot", "figure"),
             Output("loading-indicator", "children"),
-            Output("error-message", "children")
+            Output("error-alert", "children", allow_duplicate=True),
+            Output("error-alert", "is_open", allow_duplicate=True),
+            Output("viz-error-state", "data")
         ],
         inputs=[
             Input("gene-dropdown", "value"),
             Input("dataset-radio", "value"),
             Input("xaxis-dropdown", "value"),
             Input("plot-type-radio", "value"),
-            Input("tabs", "value")  # Added tab as an input to conditionally trigger
+            Input("tabs", "active_tab")
         ],
         state=[
             State("gene-expression-plot", "figure")
@@ -89,117 +98,120 @@ def register_callbacks(app) -> None:
         prevent_initial_call=True,
     )
     def update_plot(selected_genes: list, selected_datasets: list, x_axis: str, plot_type: str, 
-                   active_tab: str, current_figure: Dict[str, Any]) -> Tuple[Dict[str, Any], str, str]:
+                   active_tab: str, current_figure: Dict[str, Any]) -> Tuple[Dict[str, Any], str, str, bool, str]:
         """Update the plot based on selected genes and datasets"""
         # Only update when on the gene-visualization tab
         ctx = callback_context
         if not ctx.triggered:
-            return no_update, no_update, no_update
+            return no_update, no_update, no_update, no_update, no_update
             
         # Skip update if not on the gene visualization tab, unless tab change triggered the callback
         trigger = ctx.triggered[0]['prop_id'].split('.')[0]
         if active_tab != "gene-visualization" and trigger != "tabs":
-            return no_update, no_update, no_update
+            return no_update, no_update, no_update, no_update, no_update
         
         # If tab change to gene-comparison triggered this callback, don't update
         if trigger == "tabs" and active_tab == "gene-comparison":
-            return no_update, no_update, no_update
+            return no_update, no_update, no_update, no_update, no_update
         
         # Handle missing selections with specific error messages
         if not selected_genes and not selected_datasets:
-            return {}, "", "Please select at least one gene and one dataset"
+            error_msg = "Please select at least one gene and one dataset"
+            return {}, "", error_msg, True, error_msg
         if not selected_genes:
-            return {}, "", "Please select at least one gene"
+            error_msg = "Please select at least one gene"
+            return {}, "", error_msg, True, error_msg
         if not selected_datasets:
-            return {}, "", "Please select at least one dataset"
+            error_msg = "Please select at least one dataset"
+            return {}, "", error_msg, True, error_msg
             
         try:
             # Fetch data (will use LRU cache if available)
             data = fetch_gene_expression_data(tuple(selected_genes), tuple(selected_datasets))
             
             if data.empty:
-                return current_figure or {}, "", "No data available for the selected combination"
+                error_msg = "No data available for the selected combination"
+                return current_figure or {}, "", error_msg, True, error_msg
                 
             # Create plot with dynamic x-axis and plot type
-            if plot_type == "violin+points":
-                # TODO - not coloured by dataset, no hover_data
-                #plot_data = go.Violin(x=data[x_axis], y=data["TPM"], points='all', pointpos=0)
-                #fig = go.Figure(plot_data)
-                
-                #UNCOMMENT TO SHOW POINTS NEXT TO VIOLIN PLOT + HOVER DATA, YOU WILL HAVE TO COMMENT OUT 2 LINES ABOVE.
-                fig = px.violin(data, x=x_axis, y='TPM', color="DatasetName", points="all",
-                              hover_data=['GeneName', 'DatasetName', 'SubsetName', 'TissueName',
-                                        'SubstrateType', 'Gender', 'Stage', 'Status',
-                                        'NhuDifferentiation', 'SampleId'])
-            elif plot_type == "violin":
-                fig = px.violin(data, x=x_axis, y='TPM', color="DatasetName",
-                              hover_data=['GeneName', 'DatasetName', 'SubsetName', 'TissueName',
-                                        'SubstrateType', 'Gender', 'Stage', 'Status',
-                                        'NhuDifferentiation', 'SampleId'])
-            elif plot_type == "box+points":
-                fig = px.box(data, x=x_axis, y='TPM', color="DatasetName", points="all",
-                           hover_data=['GeneName', 'DatasetName', 'SubsetName', 'TissueName',
-                                     'SubstrateType', 'Gender', 'Stage', 'Status',
-                                     'NhuDifferentiation', 'SampleId'])
+            if plot_type == "violin":
+                fig = px.violin(
+                    data, 
+                    x=x_axis, 
+                    y='TPM', 
+                    color="DatasetName", 
+                    points="all",  # Always show all points with violin plots
+                    hover_data=['GeneName', 'DatasetName', 'SubsetName', 'TissueName',
+                               'SubstrateType', 'Gender', 'Stage', 'Status',
+                               'NhuDifferentiation', 'SampleId']
+                )
             elif plot_type == "box":
-                fig = px.box(data, x=x_axis, y='TPM', color="DatasetName",
-                           hover_data=['GeneName', 'DatasetName', 'SubsetName', 'TissueName',
-                                     'SubstrateType', 'Gender', 'Stage', 'Status',
-                                     'NhuDifferentiation', 'SampleId'])
-            else:  # strip/swarm plot
-                fig = px.strip(data, x=x_axis, y='TPM', color="DatasetName",
-                             hover_data=['GeneName', 'DatasetName', 'SubsetName', 'TissueName',
-                                       'SubstrateType', 'Gender', 'Stage', 'Status',
-                                       'NhuDifferentiation', 'SampleId'])
+                fig = px.box(
+                    data, 
+                    x=x_axis, 
+                    y='TPM', 
+                    color="DatasetName", 
+                    points="all",  # Always show all points with box plots
+                    hover_data=['GeneName', 'DatasetName', 'SubsetName', 'TissueName',
+                               'SubstrateType', 'Gender', 'Stage', 'Status',
+                               'NhuDifferentiation', 'SampleId']
+                )
+            else:  # strip/swarm plot (default)
+                fig = px.strip(
+                    data, 
+                    x=x_axis, 
+                    y='TPM', 
+                    color="DatasetName",
+                    hover_data=['GeneName', 'DatasetName', 'SubsetName', 'TissueName',
+                               'SubstrateType', 'Gender', 'Stage', 'Status',
+                               'NhuDifferentiation', 'SampleId']
+                )
             
-            # Update layout with dynamic x-axis title
-            x_axis_titles = {
-                "GeneName": "Gene Name",
-                "NhuDifferentiation": "NHU",
-                "TissueName": "Tissue",
-                "Gender": "Gender",
-                "SubstrateType": "Substrate",
-                "SubsetName": "Dataset Subset",
-                "Stage": "Tumor Stage",
-                "Status": "Vital Status",
-                "SampleId": "Sample ID"
-            }
-            
-            # Set tick angle based on number of unique values
-            tick_angle = 90 if len(data[x_axis].unique()) > 10 else 0
-            
+            # Update layout for better appearance
             fig.update_layout(
-                title="Gene Expression Data",
-                title_x=0.5,
-                xaxis_title=x_axis_titles.get(x_axis, x_axis),
+                title=f"Expression of {', '.join(selected_genes)} by {x_axis}",
+                xaxis_title=x_axis,
                 yaxis_title="TPM (Transcripts Per Million)",
-                showlegend=True,
-                legend_title="Dataset",
-                xaxis={'automargin': True, 'tickangle': tick_angle},
-                margin={'t': 50, 'l': 50, 'r': 50, 'b': 100}
+                xaxis={'categoryorder': 'total ascending'},
+                plot_bgcolor="white",
+                legend_title_text="Dataset",
+                height=500,
+                margin=dict(l=50, r=50, t=80, b=50)
             )
             
-            fig.update_traces(
-                marker=dict(size=6, opacity=0.7),
-                jitter=0.35
+            # Update grid and axis lines for better readability
+            fig.update_xaxes(
+                gridcolor='rgba(0,0,0,0.05)',
+                gridwidth=1,
+                linecolor='rgba(0,0,0,0.2)',
+                linewidth=1
             )
             
-            return fig, "", ""  # Empty error message on success
+            fig.update_yaxes(
+                gridcolor='rgba(0,0,0,0.05)',
+                gridwidth=1,
+                linecolor='rgba(0,0,0,0.2)',
+                linewidth=1
+            )
+            
+            return fig, "", "", False, ""
             
         except Exception as e:
-            print(f"Error updating plot: {str(e)}")
-            return current_figure or {}, "", f"Error: {str(e)}"
-            
+            error_msg = f"Error generating plot: {str(e)}"
+            return current_figure or {}, "", error_msg, True, error_msg
+    
     @app.callback(
         output=[
             Output("gene-comparison-plot", "figure"),
-            Output("error-message", "children", allow_duplicate=True)
+            Output("error-alert", "children", allow_duplicate=True),
+            Output("error-alert", "is_open", allow_duplicate=True),
+            Output("comp-error-state", "data")
         ],
         inputs=[
             Input("gene-comparison-dropdown-1", "value"),
             Input("gene-comparison-dropdown-2", "value"),
             Input("dataset-radio", "value"),
-            Input("tabs", "value")  # Added tab as an input to conditionally trigger
+            Input("tabs", "active_tab")
         ],
         state=[
             State("gene-comparison-plot", "figure")
@@ -207,41 +219,46 @@ def register_callbacks(app) -> None:
         prevent_initial_call=True,
     )
     def update_comparison_plot(gene1: str, gene2: str, selected_datasets: list, 
-                              active_tab: str, current_figure: Dict[str, Any]) -> Tuple[Dict[str, Any], str]:
+                              active_tab: str, current_figure: Dict[str, Any]) -> Tuple[Dict[str, Any], str, bool, str]:
         """Update the gene comparison scatter plot based on selected genes"""
         # Only update when on the gene-comparison tab
         ctx = callback_context
         if not ctx.triggered:
-            return no_update, no_update
+            return no_update, no_update, no_update, no_update
             
         # Skip update if not on the gene comparison tab, unless tab change triggered the callback
         trigger = ctx.triggered[0]['prop_id'].split('.')[0]
         if active_tab != "gene-comparison" and trigger != "tabs":
-            return no_update, no_update
+            return no_update, no_update, no_update, no_update
         
         # If tab change to gene-visualization triggered this callback, don't update
         if trigger == "tabs" and active_tab == "gene-visualization":
-            return no_update, no_update
-            
+            return no_update, no_update, no_update, no_update
+        
         # Handle missing selections with specific error messages
         if not gene1 and not gene2:
-            return current_figure or {}, "Please select two genes for comparison"
+            error_msg = "Please select two genes for comparison"
+            return current_figure or {}, error_msg, True, error_msg
         if not gene1:
-            return current_figure or {}, "Please select the first gene"
+            error_msg = "Please select the first gene"
+            return current_figure or {}, error_msg, True, error_msg
         if not gene2:
-            return current_figure or {}, "Please select the second gene"
+            error_msg = "Please select the second gene"
+            return current_figure or {}, error_msg, True, error_msg
         if gene1 == gene2:
-            return current_figure or {}, "Please select different genes for comparison"
+            error_msg = "Please select different genes for comparison"
+            return current_figure or {}, error_msg, True, error_msg
         if not selected_datasets:
-            return current_figure or {}, "Please select at least one dataset"
+            error_msg = "Please select at least one dataset"
+            return current_figure or {}, error_msg, True, error_msg
             
         try:
             # Fetch data for both genes
-            selected_genes = (gene1, gene2)
-            data = fetch_gene_expression_data(selected_genes, tuple(selected_datasets))
+            data = fetch_gene_expression_data((gene1, gene2), tuple(selected_datasets))
             
             if data.empty:
-                return current_figure or {}, "No data available for the selected combination"
+                error_msg = "No data available for the selected combination"
+                return current_figure or {}, error_msg, True, error_msg
                 
             # Process data for scatter plot
             # We need to pivot the data to have one row per sample with TPM values for both genes
@@ -263,7 +280,8 @@ def register_callbacks(app) -> None:
             
             # Check if SampleId is available
             if 'SampleId' not in gene1_data.columns:
-                return current_figure or {}, "Sample ID information is not available for proper gene comparison. Please contact the administrator."
+                error_msg = "Sample ID information is not available for proper gene comparison. Please contact the administrator."
+                return current_figure or {}, error_msg, True, error_msg
             
             # Keep only necessary columns (SampleId, TPM, and all available metadata)
             gene1_cols = ['SampleId'] + available_metadata + [f'{gene1}_TPM']
@@ -311,12 +329,12 @@ def register_callbacks(app) -> None:
                 
                 fig.update_layout(
                     title=f"Gene Comparison: {gene1} vs {gene2}",
-                    title_x=0.5,
-                    xaxis_title=f"{gene1} TPM",
-                    yaxis_title=f"{gene2} TPM",
-                    showlegend=True,
-                    legend_title="Dataset" if "DatasetName" in merged_data.columns else None,
-                    margin={'t': 50, 'l': 50, 'r': 50, 'b': 50}
+                    xaxis_title=f"{gene1} Expression (TPM)",
+                    yaxis_title=f"{gene2} Expression (TPM)",
+                    plot_bgcolor="white",
+                    legend_title_text="Dataset",
+                    height=500,
+                    margin=dict(l=50, r=50, t=80, b=50)
                 )
                 
                 # Find the maximum value for both axes to set the line range
@@ -373,24 +391,26 @@ def register_callbacks(app) -> None:
                     selector=dict(mode='markers')
                 )
                 
-                # Add an annotation with the diagnostic info
-                fig.add_annotation(
-                    text=diag_message,
-                    xref="paper", yref="paper",
-                    x=0.5, y=0,
-                    showarrow=False,
-                    font=dict(size=10, color="gray"),
-                    bgcolor="rgba(255, 255, 255, 0.7)",
-                    bordercolor="gray",
-                    borderwidth=1,
-                    borderpad=4,
-                    align="center"
+                # Update grid and axis lines for better readability
+                fig.update_xaxes(
+                    gridcolor='rgba(0,0,0,0.05)',
+                    gridwidth=1,
+                    linecolor='rgba(0,0,0,0.2)',
+                    linewidth=1
                 )
                 
-                return fig, ""
+                fig.update_yaxes(
+                    gridcolor='rgba(0,0,0,0.05)',
+                    gridwidth=1,
+                    linecolor='rgba(0,0,0,0.2)',
+                    linewidth=1
+                )
+                
+                return fig, "", False, ""
             else:
-                return current_figure or {}, f"No matching samples found for both genes in the selected datasets. {diag_message}"
+                error_msg = f"No matching samples found for both genes in the selected datasets. {diag_message}"
+                return current_figure or {}, error_msg, True, error_msg
                 
         except Exception as e:
-            print(f"Error updating comparison plot: {str(e)}")
-            return current_figure or {}, f"Error: {str(e)}"
+            error_msg = f"Error generating comparison plot: {str(e)}"
+            return current_figure or {}, error_msg, True, error_msg

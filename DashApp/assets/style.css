@@ -1,148 +1,162 @@
 body {
     font-family: 'Segoe UI', Arial, sans-serif;
-    background-color: #f5f5f5;
+    background-color: #f8f9fa;
     margin: 0;
-    padding: 20px;
+    padding: 0;
     color: #333;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
 }
 
-h1 {
+/* Main content should fill available space, pushing footer to bottom */
+#root {
+    flex: 1 0 auto;
+}
+
+/* Card styling */
+.card {
+    border: none;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    margin-bottom: 1.5rem;
+}
+
+.card-title {
     color: #2c3e50;
+    font-weight: 600;
+}
+
+/* Nav styling */
+.navbar {
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.navbar-brand {
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+/* Tabs */
+.nav-tabs {
+    border-bottom: 1px solid #dee2e6;
+}
+
+.nav-tabs .nav-link {
+    border: none;
+    color: #6c757d;
     font-weight: 500;
-    margin-bottom: 40px;
+    padding: 0.75rem 1.25rem;
 }
 
-/* Control panel styles */
-.control-panel {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    background-color: white;
-    border-top-left-radius: 0px;
-    border-top-right-radius: 0px;
-    border-bottom-left-radius: 8px;
-    border-bottom-right-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    padding: 24px;
-    margin-bottom: 20px;
-    padding-top: 40px;
+.nav-tabs .nav-link:hover {
+    border-color: transparent;
+    color: #212529;
 }
 
-/* Left side of control panel */
-.left-container {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
+.nav-tabs .nav-link.active {
+    color: #007bff;
+    background-color: transparent;
+    border-bottom: 2px solid #007bff;
+    font-weight: 600;
 }
 
-.dropdown-container {
-    display: flex;
-    gap: 24px;
-    flex-wrap: wrap;
-}
-
-.dropdown-section {
-    flex: 1;
-    min-width: 300px;
-}
-
-.dropdown-label {
-    font-size: 14px;
-    font-weight: 500;
-    color: #4a5568;
-    margin-bottom: 8px;
-    display: block;
-}
-
-.dropdown {
+/* Footer */
+footer {
+    flex-shrink: 0;
     width: 100%;
-    margin-bottom: 0;
+}
+
+/* Inputs and controls */
+.form-control, .form-select {
+    border-radius: 0.25rem;
+    border: 1px solid #ced4da;
+}
+
+.form-label {
+    font-weight: 500;
 }
 
 /* Dataset radio styles */
 .dataset-radio-group {
-    margin-bottom: 16px;
     column-count: 3;
+    column-gap: 1.5rem;
+}
+
+@media (max-width: 767.98px) {
+    .dataset-radio-group {
+        column-count: 2;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .dataset-radio-group {
+        column-count: 1;
+    }
 }
 
 .dataset-radio-group label {
     display: flex;
     align-items: center;
     cursor: pointer;
-    padding: 8px;
-    border-radius: 4px;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
     transition: background-color 0.2s;
+    margin-bottom: 0.5rem;
+    break-inside: avoid-column;
 }
 
 .dataset-radio-group label:hover {
-    background-color: #f7fafc;
+    background-color: #f8f9fa;
 }
 
-.dataset-radio-group input[type="radio"] {
-    margin-right: 8px;
+.dataset-radio-group input[type="checkbox"] {
+    margin-right: 0.5rem;
 }
 
-.dataset-controls {
-    display: flex;
-    gap: 12px;
-    margin-top: 16px;
+/* Style for dropdowns with dbc class to match bootstrap style */
+.dbc .Select-control {
+    border-radius: 0.25rem;
+    border: 1px solid #ced4da;
+    min-height: 38px;
 }
 
-.dataset-control-btn {
-    padding: 8px 16px;
-    background-color: #edf2f7;
-    border: 1px solid #e2e8f0;
-    border-radius: 4px;
-    color: #4a5568;
-    cursor: pointer;
-    font-size: 14px;
-    transition: all 0.2s;
+.dbc .Select-placeholder {
+    color: #6c757d;
+    padding: 6px 12px;
 }
 
-.dataset-control-btn:hover {
-    background-color: #e2e8f0;
-    color: #2d3748;
+.dbc .Select-input {
+    padding-left: 12px;
+    padding-right: 12px;
 }
 
-/* Status section styles */
-.status-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 20px;
-    min-height: 100px;
-}
-
-.loading-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 40px;
-}
-
-.error-message {
-    color: #e53e3e;
-    text-align: center;
-    padding: 0px;
-    margin: 0;
-    font-size: 14px;
-    border-radius: 4px;
-    background-color: rgba(229, 62, 62, 0.1);
-    max-width: 600px;
-}
-
-/* Plot container styles */
-.plot-container {
-    background-color: white;
-    border-radius: 8px;
+.dbc .Select-menu-outer {
+    border-radius: 0.25rem;
+    margin-top: 3px;
+    border: 1px solid #ced4da;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    padding: 24px;
+    z-index: 1000;
 }
 
-.graph {
-    width: 100%;
-    height: 600px;
-    margin-top: 20px;
+.dbc .Select-option {
+    padding: 8px 12px;
+}
+
+.dbc .Select-option.is-focused {
+    background-color: #e9ecef;
+}
+
+.dbc .Select-option.is-selected {
+    background-color: #007bff;
+    color: white;
+}
+
+/* For the loading container */
+.text-center .dash-spinner {
+    margin: 0 auto;
+}
+
+/* Error message */
+.text-danger {
+    color: #dc3545;
 }
