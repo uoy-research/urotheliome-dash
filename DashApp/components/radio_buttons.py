@@ -37,22 +37,3 @@ def dataset_radio():
             )
         ], className="mb-3")
     ])
-
-# Plot type radio buttons
-def plot_type_radio():
-    return html.Div([
-        html.Label("Select Plot Type", className="mb-2"),
-        dbc.RadioItems(
-            id="plot-type-radio",
-            options=[
-                {"label": "Scatter", "value": "strip"},
-                {"label": "Violin", "value": "violin"},
-                {"label": "Violin and Points", "value": "violin+points"},
-                {"label": "Box", "value": "box"},
-                {"label": "Box and Points", "value": "box+points"}
-            ],
-            value="strip",
-            inline=True,
-            className="mb-3"
-        )
-    ])

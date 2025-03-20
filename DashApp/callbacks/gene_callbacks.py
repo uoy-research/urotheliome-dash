@@ -32,10 +32,7 @@ def register_callbacks(app) -> None:
             return []
         return no_update
     
-    # Removing the toggle_tab_content callback since the UI structure has changed
-    # and we're now using tab content directly in the layout
-    
-    # Add a callback to clear error messages when selections change
+    # clear error messages when selections change
     @app.callback(
         [Output("error-alert", "children"),
          Output("error-alert", "is_open")],
