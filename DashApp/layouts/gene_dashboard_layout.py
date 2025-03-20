@@ -1,7 +1,7 @@
 from dash import html, dcc
 import dash_bootstrap_components as dbc
 from components.dropdowns import gene_dropdown, xaxis_dropdown, gene_comparison_dropdown_1, gene_comparison_dropdown_2
-from components.radio_buttons import dataset_radio, plot_type_radio
+from components.radio_buttons import dataset_radio
 from components.plots import gene_expression_plot, gene_comparison_plot
 
 def gene_dashboard_layout() -> html.Div:
