@@ -10,9 +10,6 @@ from scipy import stats
 def register_callbacks(app) -> None:
     """Register all callbacks for the application"""
     
-    # The toggle_visualization_mode callback is no longer needed because we're using Bootstrap tabs with content inside
-    # each tab, so components are automatically shown/hidden based on which tab is active
-    
     @app.callback(
         Output("dataset-radio", "value"),
         [
@@ -34,7 +31,10 @@ def register_callbacks(app) -> None:
         elif button_id == "clear-datasets":
             return []
         return no_update
-
+    
+    # Removing the toggle_tab_content callback since the UI structure has changed
+    # and we're now using tab content directly in the layout
+    
     # Add a callback to clear error messages when selections change
     @app.callback(
         [Output("error-alert", "children"),
@@ -175,7 +175,7 @@ def register_callbacks(app) -> None:
                 xaxis={'categoryorder': 'total ascending'},
                 plot_bgcolor="white",
                 legend_title_text="Dataset",
-                height=500,
+                height=600,  # Increased height for better visibility
                 margin=dict(l=50, r=50, t=80, b=50)
             )
             
@@ -333,7 +333,7 @@ def register_callbacks(app) -> None:
                     yaxis_title=f"{gene2} Expression (TPM)",
                     plot_bgcolor="white",
                     legend_title_text="Dataset",
-                    height=500,
+                    height=600,  # Increased height for better visibility
                     margin=dict(l=50, r=50, t=80, b=50)
                 )
                 
@@ -369,16 +369,26 @@ def register_callbacks(app) -> None:
                     x_reg = np.array([0, max_val])
                     y_reg = intercept + slope * x_reg
                     
-                    # Add regression line
+                    # Add regression line (simplified legend entry)
                     fig.add_trace(
                         go.Scatter(
                             x=x_reg,
                             y=y_reg,
                             mode='lines',
                             line=dict(color='rgba(255,0,0,0.7)', width=2),
-                            name=f'Regression Line (y = {slope:.2f}x + {intercept:.2f}, R² = {r_squared:.2f})',
+                            name='Regression Line',
                             showlegend=True
                         )
+                    )
+                    
+                    # Include regression equation in the title instead of as an annotation
+                    regression_text = f"(y = {slope:.2f}x + {intercept:.2f}, R² = {r_squared:.2f})"
+                    fig.update_layout(
+                        title=f"Gene Comparison: {gene1} vs {gene2} - {regression_text}"
+                    )
+                else:
+                    fig.update_layout(
+                        title=f"Gene Comparison: {gene1} vs {gene2}"
                     )
                 
                 # Update marker properties
