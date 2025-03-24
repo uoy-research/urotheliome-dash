@@ -11,16 +11,23 @@ def register_callbacks(app) -> None:
     """Register all callbacks for the application"""
     
     @app.callback(
+        Output("ter-value-display", "children"),
+        Input("ter-input", "value")
+    )
+    def update_ter_display(value):
+        """Update the displayed TER threshold value"""
+        # Handle None value when the input is empty
+        if value is None:
+            value = 0
+        return f"TER > {value}"
+    
+    @app.callback(
         Output("dataset-radio", "value"),
-        [
-            Input("select-all-datasets", "n_clicks"),
-            Input("clear-datasets", "n_clicks")
-        ],
+        [Input("select-all-datasets", "n_clicks"), Input("clear-datasets", "n_clicks")],
         State("dataset-radio", "options"),
         prevent_initial_call=True
     )
     def handle_dataset_controls(select_all_clicks, clear_clicks, options):
-        """Handle the Select All and Clear buttons for datasets"""
         ctx = callback_context
         if not ctx.triggered:
             return no_update
@@ -32,43 +39,50 @@ def register_callbacks(app) -> None:
             return []
         return no_update
     
-    # clear error messages when selections change
     @app.callback(
-        [Output("error-alert", "children"),
-         Output("error-alert", "is_open")],
+        [Output("error-alert", "children"), Output("error-alert", "is_open")],
         [Input("dataset-radio", "value"),
          Input("gene-dropdown", "value"),
          Input("gene-comparison-dropdown-1", "value"),
          Input("gene-comparison-dropdown-2", "value"),
-         Input("tabs", "active_tab")],
+         Input("tabs", "active_tab"),
+         Input("ter-input", "value")],
         prevent_initial_call=True
     )
-    def manage_error_messages(selected_datasets, selected_genes, gene1, gene2, active_tab):
-        """Manage error messages based on selection changes and active tab"""
+    def manage_error_messages(selected_datasets, selected_genes, gene1, gene2, active_tab, ter_threshold):
         ctx = callback_context
         if not ctx.triggered:
             return no_update, no_update
         
         trigger = ctx.triggered[0]['prop_id'].split('.')[0]
         
-        # If tab changes, show the error for the current tab (if any)
-        if trigger == "tabs":
-            # Since we don't have viz_error and comp_error parameters,
-            # we'll just clear the error message when changing tabs
-            return "", False
-        
-        # Clear the appropriate error based on which input triggered the callback
-        if trigger == "dataset-radio":
-            # Dataset changes affect both tabs, so clear all errors
-            return "", False
-        elif trigger == "gene-dropdown" and active_tab == "gene-visualization":
-            # Clear visualization error
-            return "", False
-        elif trigger in ["gene-comparison-dropdown-1", "gene-comparison-dropdown-2"] and active_tab == "gene-comparison":
-            # Clear comparison error
+        # Clear error message for tab changes or relevant input changes
+        if (trigger == "tabs" or 
+            trigger == "dataset-radio" or
+            trigger == "ter-input" or
+            (trigger == "gene-dropdown" and active_tab == "gene-visualization") or
+            (trigger in ["gene-comparison-dropdown-1", "gene-comparison-dropdown-2"] and active_tab == "gene-comparison")):
             return "", False
         
         return no_update, no_update
+    
+    def apply_common_styling(fig):
+        """Apply common styling to all plots"""
+        fig.update_layout(
+            plot_bgcolor="white",
+            height=600,
+            margin=dict(l=50, r=50, t=80, b=50)
+        )
+        
+        for axis in [fig.update_xaxes, fig.update_yaxes]:
+            axis(
+                gridcolor='rgba(0,0,0,0.05)',
+                gridwidth=1,
+                linecolor='rgba(0,0,0,0.2)',
+                linewidth=1
+            )
+        
+        return fig
     
     @app.callback(
         output=[
@@ -82,115 +96,79 @@ def register_callbacks(app) -> None:
             Input("dataset-radio", "value"),
             Input("xaxis-dropdown", "value"),
             Input("plot-type-radio", "value"),
-            Input("tabs", "active_tab")
+            Input("tabs", "active_tab"),
+            Input("ter-input", "value")
         ],
-        state=[
-            State("gene-expression-plot", "figure")
-        ],
+        state=[State("gene-expression-plot", "figure")],
         prevent_initial_call=True,
     )
     def update_plot(selected_genes: list, selected_datasets: list, x_axis: str, plot_type: str, 
-                   active_tab: str, current_figure: Dict[str, Any]) -> Tuple[Dict[str, Any], str, str, bool]:
-        """Update the plot based on selected genes and datasets"""
-        # Only update when on the gene-visualization tab
+                   active_tab: str, ter_threshold: int, current_figure: Dict[str, Any]) -> Tuple[Dict[str, Any], str, str, bool]:
         ctx = callback_context
-        if not ctx.triggered:
-            return no_update, no_update, no_update, no_update
-            
-        # Skip update if not on the gene visualization tab, unless tab change triggered the callback
-        trigger = ctx.triggered[0]['prop_id'].split('.')[0]
-        if active_tab != "gene-visualization" and trigger != "tabs":
+        if not ctx.triggered or active_tab != "gene-visualization" and ctx.triggered[0]['prop_id'].split('.')[0] != "tabs":
             return no_update, no_update, no_update, no_update
         
-        # If tab change to gene-comparison triggered this callback, don't update
-        if trigger == "tabs" and active_tab == "gene-comparison":
+        # Skip if tab change to gene-comparison triggered this callback
+        if ctx.triggered[0]['prop_id'].split('.')[0] == "tabs" and active_tab == "gene-comparison":
             return no_update, no_update, no_update, no_update
         
-        # Handle missing selections with specific error messages
-        if not selected_genes and not selected_datasets:
-            error_msg = "Please select at least one gene and one dataset"
-            return {}, "", error_msg, True
+        # Check for required selections
         if not selected_genes:
-            error_msg = "Please select at least one gene"
-            return {}, "", error_msg, True
+            return {}, "", "Please select at least one gene", True
         if not selected_datasets:
-            error_msg = "Please select at least one dataset"
-            return {}, "", error_msg, True
+            return {}, "", "Please select at least one dataset", True
+            
+        # Handle None value when the input is empty   
+        if ter_threshold is None:
+            ter_threshold = 0
             
         try:
-            # Fetch data (will use LRU cache if available)
+            # Fetch data
             data = fetch_gene_expression_data(tuple(selected_genes), tuple(selected_datasets))
             
             if data.empty:
-                error_msg = "No data available for the selected combination"
-                return current_figure or {}, "", error_msg, True
-                
+                return current_figure or {}, "", "No data available for the selected combination", True
+            
+            # Filter by TER threshold
+            if ter_threshold > 0:
+                filtered_data = data[data['TER'] > ter_threshold]
+                if filtered_data.empty:
+                    return current_figure or {}, "", f"No data available with TER > {ter_threshold}", True
+                data = filtered_data
+            
+            # Common hover data for all plot types
+            hover_cols = ['GeneName', 'DatasetName', 'SubsetName', 'TissueName',
+                          'SubstrateType', 'Gender', 'Stage', 'Status',
+                          'NhuDifferentiation', 'SampleId', 'TER']
+            
             # Create plot with dynamic x-axis and plot type
             if plot_type == "violin":
-                fig = px.violin(
-                    data, 
-                    x=x_axis, 
-                    y='TPM', 
-                    color="DatasetName", 
-                    points="all",  # Always show all points with violin plots
-                    hover_data=['GeneName', 'DatasetName', 'SubsetName', 'TissueName',
-                               'SubstrateType', 'Gender', 'Stage', 'Status',
-                               'NhuDifferentiation', 'SampleId']
-                )
+                fig = px.violin(data, x=x_axis, y='TPM', color="DatasetName", 
+                                points="all", hover_data=hover_cols)
             elif plot_type == "box":
-                fig = px.box(
-                    data, 
-                    x=x_axis, 
-                    y='TPM', 
-                    color="DatasetName", 
-                    points="all",  # Always show all points with box plots
-                    hover_data=['GeneName', 'DatasetName', 'SubsetName', 'TissueName',
-                               'SubstrateType', 'Gender', 'Stage', 'Status',
-                               'NhuDifferentiation', 'SampleId']
-                )
+                fig = px.box(data, x=x_axis, y='TPM', color="DatasetName", 
+                             points="all", hover_data=hover_cols)
             else:  # strip/swarm plot (default)
-                fig = px.strip(
-                    data, 
-                    x=x_axis, 
-                    y='TPM', 
-                    color="DatasetName",
-                    hover_data=['GeneName', 'DatasetName', 'SubsetName', 'TissueName',
-                               'SubstrateType', 'Gender', 'Stage', 'Status',
-                               'NhuDifferentiation', 'SampleId']
-                )
+                fig = px.strip(data, x=x_axis, y='TPM', color="DatasetName", 
+                               hover_data=hover_cols)
             
-            # Update layout for better appearance
+            # Update layout
+            plot_title = f"Expression of {', '.join(selected_genes)} by {x_axis}"
+            if ter_threshold > 0:
+                plot_title += f" (TER > {ter_threshold})"
+                
             fig.update_layout(
-                title=f"Expression of {', '.join(selected_genes)} by {x_axis}",
+                title=plot_title,
                 xaxis_title=x_axis,
                 yaxis_title="TPM (Transcripts Per Million)",
                 xaxis={'categoryorder': 'total ascending'},
-                plot_bgcolor="white",
-                legend_title_text="Dataset",
-                height=600,  # Increased height for better visibility
-                margin=dict(l=50, r=50, t=80, b=50)
+                legend_title_text="Dataset"
             )
             
-            # Update grid and axis lines for better readability
-            fig.update_xaxes(
-                gridcolor='rgba(0,0,0,0.05)',
-                gridwidth=1,
-                linecolor='rgba(0,0,0,0.2)',
-                linewidth=1
-            )
-            
-            fig.update_yaxes(
-                gridcolor='rgba(0,0,0,0.05)',
-                gridwidth=1,
-                linecolor='rgba(0,0,0,0.2)',
-                linewidth=1
-            )
-            
-            return fig, "", "", False
+            return apply_common_styling(fig), "", "", False
             
         except Exception as e:
-            error_msg = f"Error generating plot: {str(e)}"
-            return current_figure or {}, "", error_msg, True
+            return current_figure or {}, "", f"Error generating plot: {str(e)}", True
     
     @app.callback(
         output=[
@@ -202,216 +180,164 @@ def register_callbacks(app) -> None:
             Input("gene-comparison-dropdown-1", "value"),
             Input("gene-comparison-dropdown-2", "value"),
             Input("dataset-radio", "value"),
-            Input("tabs", "active_tab")
+            Input("tabs", "active_tab"),
+            Input("ter-input", "value")
         ],
-        state=[
-            State("gene-comparison-plot", "figure")
-        ],
+        state=[State("gene-comparison-plot", "figure")],
         prevent_initial_call=True,
     )
     def update_comparison_plot(gene1: str, gene2: str, selected_datasets: list, 
-                              active_tab: str, current_figure: Dict[str, Any]) -> Tuple[Dict[str, Any], str, bool]:
-        """Update the gene comparison scatter plot based on selected genes"""
-        # Only update when on the gene-comparison tab
+                              active_tab: str, ter_threshold: int, current_figure: Dict[str, Any]) -> Tuple[Dict[str, Any], str, bool]:
         ctx = callback_context
-        if not ctx.triggered:
-            return no_update, no_update, no_update
-            
-        # Skip update if not on the gene comparison tab, unless tab change triggered the callback
-        trigger = ctx.triggered[0]['prop_id'].split('.')[0]
-        if active_tab != "gene-comparison" and trigger != "tabs":
+        if not ctx.triggered or active_tab != "gene-comparison" and ctx.triggered[0]['prop_id'].split('.')[0] != "tabs":
             return no_update, no_update, no_update
         
-        # If tab change to gene-visualization triggered this callback, don't update
-        if trigger == "tabs" and active_tab == "gene-visualization":
+        # Skip if tab change to gene-visualization triggered this callback
+        if ctx.triggered[0]['prop_id'].split('.')[0] == "tabs" and active_tab == "gene-visualization":
             return no_update, no_update, no_update
         
-        # Handle missing selections with specific error messages
-        if not gene1 and not gene2:
-            error_msg = "Please select two genes for comparison"
-            return current_figure or {}, error_msg, True
-        if not gene1:
-            error_msg = "Please select the first gene"
-            return current_figure or {}, error_msg, True
-        if not gene2:
-            error_msg = "Please select the second gene"
-            return current_figure or {}, error_msg, True
+        # Check for required selections
+        if not gene1 or not gene2:
+            missing = "first" if not gene1 else "second"
+            return current_figure or {}, f"Please select the {missing} gene", True
         if gene1 == gene2:
-            error_msg = "Please select different genes for comparison"
-            return current_figure or {}, error_msg, True
+            return current_figure or {}, "Please select different genes for comparison", True
         if not selected_datasets:
-            error_msg = "Please select at least one dataset"
-            return current_figure or {}, error_msg, True
+            return current_figure or {}, "Please select at least one dataset", True
+        
+        # Handle None value when the input is empty
+        if ter_threshold is None:
+            ter_threshold = 0
             
         try:
-            # Fetch data for both genes
+            # Fetch and prepare data
             data = fetch_gene_expression_data((gene1, gene2), tuple(selected_datasets))
             
             if data.empty:
-                error_msg = "No data available for the selected combination"
-                return current_figure or {}, error_msg, True
-                
+                return current_figure or {}, "No data available for the selected combination", True
+             
+            # Filter by TER threshold
+            if ter_threshold > 0:
+                filtered_data = data[data['TER'] > ter_threshold]
+                if filtered_data.empty:
+                    return current_figure or {}, f"No data available with TER > {ter_threshold}", True
+                data = filtered_data
+               
             # Process data for scatter plot
-            # We need to pivot the data to have one row per sample with TPM values for both genes
             gene1_data = data[data['GeneName'] == gene1].copy()
             gene2_data = data[data['GeneName'] == gene2].copy()
             
-            # Count data points for each gene
             gene1_count = len(gene1_data)
             gene2_count = len(gene2_data)
             
-            # Define metadata columns that we want to preserve for hover data
+            # Define metadata columns for hover data
             metadata_columns = ['DatasetName', 'SubsetName', 'TissueName', 'SubstrateType', 
-                                'Gender', 'Stage', 'Status', 'NhuDifferentiation']
+                                'Gender', 'Stage', 'Status', 'NhuDifferentiation', 'TER']
             available_metadata = [col for col in metadata_columns if col in data.columns]
             
-            # Rename TPM columns for clarity
             gene1_data = gene1_data.rename(columns={'TPM': f'{gene1}_TPM'})
             gene2_data = gene2_data.rename(columns={'TPM': f'{gene2}_TPM'})
             
-            # Check if SampleId is available
             if 'SampleId' not in gene1_data.columns:
-                error_msg = "Sample ID information is not available for proper gene comparison. Please contact the administrator."
-                return current_figure or {}, error_msg, True
+                return current_figure or {}, "Sample ID information is not available for proper gene comparison", True
             
-            # Keep only necessary columns (SampleId, TPM, and all available metadata)
+            # Prepare data for merge
             gene1_cols = ['SampleId'] + available_metadata + [f'{gene1}_TPM']
             gene2_cols = ['SampleId'] + [f'{gene2}_TPM']
             
             gene1_data = gene1_data[gene1_cols].drop_duplicates('SampleId')
             gene2_data = gene2_data[gene2_cols].drop_duplicates('SampleId')
             
-            # Merge the two dataframes using only SampleId
-            merged_data = gene1_data.merge(
-                gene2_data,
-                on='SampleId',
-                how='inner'
-            )
-            
-            # Find out how many points we matched
+            # Merge the dataframes on SampleId
+            merged_data = gene1_data.merge(gene2_data, on='SampleId', how='inner')
             matched_count = len(merged_data)
             
-            # Display diagnostic message
-            diag_message = f"Found {gene1_count} samples for {gene1}, {gene2_count} samples for {gene2}, and {matched_count} matching samples."
-            
+            if merged_data.empty:
+                diag_message = f"Found {gene1_count} samples for {gene1}, {gene2_count} samples for {gene2}, and 0 matching samples."
+                return current_figure or {}, f"No matching samples found for both genes. {diag_message}", True
+                
             # Create scatter plot
-            if not merged_data.empty:
-                # Define hover data to include both gene TPM values and all metadata
-                hover_data = {
-                    'SampleId': True,
-                    f'{gene1}_TPM': True,
-                    f'{gene2}_TPM': True
-                }
+            hover_data = {'SampleId': True, f'{gene1}_TPM': True, f'{gene2}_TPM': True}
+            for col in available_metadata:
+                if col in merged_data.columns:
+                    hover_data[col] = True
+            
+            fig = px.scatter(
+                merged_data, 
+                x=f'{gene1}_TPM', 
+                y=f'{gene2}_TPM', 
+                color="DatasetName" if "DatasetName" in merged_data.columns else None,
+                hover_data=hover_data,
+                opacity=0.7,
+                size_max=10
+            )
+            
+            # Update layout
+            plot_title = f"Gene Comparison: {gene1} vs {gene2}"
+            if ter_threshold > 0:
+                plot_title += f" (TER > {ter_threshold})"
                 
-                # Add all available metadata columns to hover data
-                for col in available_metadata:
-                    if col in merged_data.columns:
-                        hover_data[col] = True
-                
-                fig = px.scatter(
-                    merged_data, 
-                    x=f'{gene1}_TPM', 
-                    y=f'{gene2}_TPM', 
-                    color="DatasetName" if "DatasetName" in merged_data.columns else None,
-                    hover_data=hover_data,
+            fig.update_layout(
+                title=plot_title,
+                xaxis_title=f"{gene1} Expression (TPM)",
+                yaxis_title=f"{gene2} Expression (TPM)",
+                legend_title_text="Dataset"
+            )
+            
+            # Update marker properties
+            fig.update_traces(
+                marker=dict(
+                    size=8,
                     opacity=0.7,
-                    size_max=10
+                    line=dict(width=1, color='DarkSlateGrey')
+                ),
+                selector=dict(mode='markers')
+            )
+            
+            # Find max value for axis ranges
+            max_val = max(
+                merged_data[f'{gene1}_TPM'].max(), 
+                merged_data[f'{gene2}_TPM'].max()
+            )
+            
+            # Add reference line (y=x)
+            fig.add_trace(
+                go.Scatter(
+                    x=[0, max_val],
+                    y=[0, max_val],
+                    mode='lines',
+                    line=dict(color='rgba(0,0,0,0.5)', dash='dash', width=2),
+                    name='1:1 Line (y=x)'
                 )
-                
-                fig.update_layout(
-                    title=f"Gene Comparison: {gene1} vs {gene2}",
-                    xaxis_title=f"{gene1} Expression (TPM)",
-                    yaxis_title=f"{gene2} Expression (TPM)",
-                    plot_bgcolor="white",
-                    legend_title_text="Dataset",
-                    height=600,  # Increased height for better visibility
-                    margin=dict(l=50, r=50, t=80, b=50)
-                )
-                
-                # Find the maximum value for both axes to set the line range
-                max_val = max(
-                    merged_data[f'{gene1}_TPM'].max() if not merged_data.empty else 1, 
-                    merged_data[f'{gene2}_TPM'].max() if not merged_data.empty else 1
-                )
-                
-                # Add a line of identity (y=x) for reference
-                fig.add_trace(
-                    go.Scatter(
-                        x=[0, max_val],
-                        y=[0, max_val],
-                        mode='lines',
-                        line=dict(color='rgba(0,0,0,0.5)', dash='dash', width=2),
-                        name='1:1 Line (y=x)',
-                        showlegend=True
-                    )
-                )
-                
-                # Calculate linear regression
+            )
+            
+            # Add regression line if there are enough data points
+            if len(merged_data) > 1:
                 x_values = merged_data[f'{gene1}_TPM'].values
                 y_values = merged_data[f'{gene2}_TPM'].values
                 
-                # Ordinary least squares regression using linregress
-                # Only calculate regression if we have enough data points
-                if len(x_values) > 1:
-                    slope, intercept, r_value, p_value, std_err = stats.linregress(x_values, y_values)
-                    r_squared = r_value**2
-                    
-                    # Create x values for the regression line
-                    x_reg = np.array([0, max_val])
-                    y_reg = intercept + slope * x_reg
-                    
-                    # Add regression line (simplified legend entry)
-                    fig.add_trace(
-                        go.Scatter(
-                            x=x_reg,
-                            y=y_reg,
-                            mode='lines',
-                            line=dict(color='rgba(255,0,0,0.7)', width=2),
-                            name='Regression Line',
-                            showlegend=True
-                        )
-                    )
-                    
-                    # Include regression equation in the title instead of as an annotation
-                    regression_text = f"(y = {slope:.2f}x + {intercept:.2f}, R² = {r_squared:.2f})"
-                    fig.update_layout(
-                        title=f"Gene Comparison: {gene1} vs {gene2} - {regression_text}"
-                    )
-                else:
-                    fig.update_layout(
-                        title=f"Gene Comparison: {gene1} vs {gene2}"
-                    )
+                slope, intercept, r_value, p_value, std_err = stats.linregress(x_values, y_values)
+                r_squared = r_value**2
                 
-                # Update marker properties
-                fig.update_traces(
-                    marker=dict(
-                        size=8,
-                        opacity=0.7,
-                        line=dict(width=1, color='DarkSlateGrey')
-                    ),
-                    selector=dict(mode='markers')
+                # Add regression line
+                x_reg = np.array([0, max_val])
+                y_reg = intercept + slope * x_reg
+                
+                fig.add_trace(
+                    go.Scatter(
+                        x=x_reg,
+                        y=y_reg,
+                        mode='lines',
+                        line=dict(color='rgba(255,0,0,0.7)', width=2),
+                        name='Regression Line'
+                    )
                 )
                 
-                # Update grid and axis lines for better readability
-                fig.update_xaxes(
-                    gridcolor='rgba(0,0,0,0.05)',
-                    gridwidth=1,
-                    linecolor='rgba(0,0,0,0.2)',
-                    linewidth=1
-                )
-                
-                fig.update_yaxes(
-                    gridcolor='rgba(0,0,0,0.05)',
-                    gridwidth=1,
-                    linecolor='rgba(0,0,0,0.2)',
-                    linewidth=1
-                )
-                
-                return fig, "", False
-            else:
-                error_msg = f"No matching samples found for both genes in the selected datasets. {diag_message}"
-                return current_figure or {}, error_msg, True
+                # Add regression equation to title
+                regression_text = f"(y = {slope:.2f}x + {intercept:.2f}, R² = {r_squared:.2f})"
+                fig.update_layout(title=f"{plot_title} - {regression_text}")
+            
+            return apply_common_styling(fig), "", False
                 
         except Exception as e:
-            error_msg = f"Error generating comparison plot: {str(e)}"
-            return current_figure or {}, error_msg, True
+            return current_figure or {}, f"Error generating comparison plot: {str(e)}", True
