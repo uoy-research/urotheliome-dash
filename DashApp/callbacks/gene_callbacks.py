@@ -41,11 +41,9 @@ def register_callbacks(app) -> None:
          Input("gene-comparison-dropdown-1", "value"),
          Input("gene-comparison-dropdown-2", "value"),
          Input("tabs", "active_tab")],
-        [State("viz-error-state", "data"),
-         State("comp-error-state", "data")],
         prevent_initial_call=True
     )
-    def manage_error_messages(selected_datasets, selected_genes, gene1, gene2, active_tab, viz_error, comp_error):
+    def manage_error_messages(selected_datasets, selected_genes, gene1, gene2, active_tab):
         """Manage error messages based on selection changes and active tab"""
         ctx = callback_context
         if not ctx.triggered:
@@ -55,10 +53,8 @@ def register_callbacks(app) -> None:
         
         # If tab changes, show the error for the current tab (if any)
         if trigger == "tabs":
-            if active_tab == "gene-visualization" and viz_error:
-                return viz_error, True
-            elif active_tab == "gene-comparison" and comp_error:
-                return comp_error, True
+            # Since we don't have viz_error and comp_error parameters,
+            # we'll just clear the error message when changing tabs
             return "", False
         
         # Clear the appropriate error based on which input triggered the callback
@@ -80,7 +76,6 @@ def register_callbacks(app) -> None:
             Output("loading-indicator", "children"),
             Output("error-alert", "children", allow_duplicate=True),
             Output("error-alert", "is_open", allow_duplicate=True),
-            Output("viz-error-state", "data")
         ],
         inputs=[
             Input("gene-dropdown", "value"),
@@ -95,32 +90,32 @@ def register_callbacks(app) -> None:
         prevent_initial_call=True,
     )
     def update_plot(selected_genes: list, selected_datasets: list, x_axis: str, plot_type: str, 
-                   active_tab: str, current_figure: Dict[str, Any]) -> Tuple[Dict[str, Any], str, str, bool, str]:
+                   active_tab: str, current_figure: Dict[str, Any]) -> Tuple[Dict[str, Any], str, str, bool]:
         """Update the plot based on selected genes and datasets"""
         # Only update when on the gene-visualization tab
         ctx = callback_context
         if not ctx.triggered:
-            return no_update, no_update, no_update, no_update, no_update
+            return no_update, no_update, no_update, no_update
             
         # Skip update if not on the gene visualization tab, unless tab change triggered the callback
         trigger = ctx.triggered[0]['prop_id'].split('.')[0]
         if active_tab != "gene-visualization" and trigger != "tabs":
-            return no_update, no_update, no_update, no_update, no_update
+            return no_update, no_update, no_update, no_update
         
         # If tab change to gene-comparison triggered this callback, don't update
         if trigger == "tabs" and active_tab == "gene-comparison":
-            return no_update, no_update, no_update, no_update, no_update
+            return no_update, no_update, no_update, no_update
         
         # Handle missing selections with specific error messages
         if not selected_genes and not selected_datasets:
             error_msg = "Please select at least one gene and one dataset"
-            return {}, "", error_msg, True, error_msg
+            return {}, "", error_msg, True
         if not selected_genes:
             error_msg = "Please select at least one gene"
-            return {}, "", error_msg, True, error_msg
+            return {}, "", error_msg, True
         if not selected_datasets:
             error_msg = "Please select at least one dataset"
-            return {}, "", error_msg, True, error_msg
+            return {}, "", error_msg, True
             
         try:
             # Fetch data (will use LRU cache if available)
@@ -128,7 +123,7 @@ def register_callbacks(app) -> None:
             
             if data.empty:
                 error_msg = "No data available for the selected combination"
-                return current_figure or {}, "", error_msg, True, error_msg
+                return current_figure or {}, "", error_msg, True
                 
             # Create plot with dynamic x-axis and plot type
             if plot_type == "violin":
@@ -191,18 +186,17 @@ def register_callbacks(app) -> None:
                 linewidth=1
             )
             
-            return fig, "", "", False, ""
+            return fig, "", "", False
             
         except Exception as e:
             error_msg = f"Error generating plot: {str(e)}"
-            return current_figure or {}, "", error_msg, True, error_msg
+            return current_figure or {}, "", error_msg, True
     
     @app.callback(
         output=[
             Output("gene-comparison-plot", "figure"),
             Output("error-alert", "children", allow_duplicate=True),
             Output("error-alert", "is_open", allow_duplicate=True),
-            Output("comp-error-state", "data")
         ],
         inputs=[
             Input("gene-comparison-dropdown-1", "value"),
@@ -216,38 +210,38 @@ def register_callbacks(app) -> None:
         prevent_initial_call=True,
     )
     def update_comparison_plot(gene1: str, gene2: str, selected_datasets: list, 
-                              active_tab: str, current_figure: Dict[str, Any]) -> Tuple[Dict[str, Any], str, bool, str]:
+                              active_tab: str, current_figure: Dict[str, Any]) -> Tuple[Dict[str, Any], str, bool]:
         """Update the gene comparison scatter plot based on selected genes"""
         # Only update when on the gene-comparison tab
         ctx = callback_context
         if not ctx.triggered:
-            return no_update, no_update, no_update, no_update
+            return no_update, no_update, no_update
             
         # Skip update if not on the gene comparison tab, unless tab change triggered the callback
         trigger = ctx.triggered[0]['prop_id'].split('.')[0]
         if active_tab != "gene-comparison" and trigger != "tabs":
-            return no_update, no_update, no_update, no_update
+            return no_update, no_update, no_update
         
         # If tab change to gene-visualization triggered this callback, don't update
         if trigger == "tabs" and active_tab == "gene-visualization":
-            return no_update, no_update, no_update, no_update
+            return no_update, no_update, no_update
         
         # Handle missing selections with specific error messages
         if not gene1 and not gene2:
             error_msg = "Please select two genes for comparison"
-            return current_figure or {}, error_msg, True, error_msg
+            return current_figure or {}, error_msg, True
         if not gene1:
             error_msg = "Please select the first gene"
-            return current_figure or {}, error_msg, True, error_msg
+            return current_figure or {}, error_msg, True
         if not gene2:
             error_msg = "Please select the second gene"
-            return current_figure or {}, error_msg, True, error_msg
+            return current_figure or {}, error_msg, True
         if gene1 == gene2:
             error_msg = "Please select different genes for comparison"
-            return current_figure or {}, error_msg, True, error_msg
+            return current_figure or {}, error_msg, True
         if not selected_datasets:
             error_msg = "Please select at least one dataset"
-            return current_figure or {}, error_msg, True, error_msg
+            return current_figure or {}, error_msg, True
             
         try:
             # Fetch data for both genes
@@ -255,7 +249,7 @@ def register_callbacks(app) -> None:
             
             if data.empty:
                 error_msg = "No data available for the selected combination"
-                return current_figure or {}, error_msg, True, error_msg
+                return current_figure or {}, error_msg, True
                 
             # Process data for scatter plot
             # We need to pivot the data to have one row per sample with TPM values for both genes
@@ -278,7 +272,7 @@ def register_callbacks(app) -> None:
             # Check if SampleId is available
             if 'SampleId' not in gene1_data.columns:
                 error_msg = "Sample ID information is not available for proper gene comparison. Please contact the administrator."
-                return current_figure or {}, error_msg, True, error_msg
+                return current_figure or {}, error_msg, True
             
             # Keep only necessary columns (SampleId, TPM, and all available metadata)
             gene1_cols = ['SampleId'] + available_metadata + [f'{gene1}_TPM']
@@ -413,11 +407,11 @@ def register_callbacks(app) -> None:
                     linewidth=1
                 )
                 
-                return fig, "", False, ""
+                return fig, "", False
             else:
                 error_msg = f"No matching samples found for both genes in the selected datasets. {diag_message}"
-                return current_figure or {}, error_msg, True, error_msg
+                return current_figure or {}, error_msg, True
                 
         except Exception as e:
             error_msg = f"Error generating comparison plot: {str(e)}"
-            return current_figure or {}, error_msg, True, error_msg
+            return current_figure or {}, error_msg, True

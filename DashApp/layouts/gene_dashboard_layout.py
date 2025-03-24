@@ -40,9 +40,7 @@ def gene_dashboard_layout() -> html.Div:
                        "width": "400px", "z-index": "1000", "opacity": "0.95"}
             ),
             
-            # Hidden divs to store error states and loading indicator
-            dcc.Store(id="viz-error-state", data=""),
-            dcc.Store(id="comp-error-state", data=""),
+            # Hidden div for loading indicator (removing unused error state stores)
             html.Div(id="loading-indicator", style={"display": "none"}),
             
             # Tabs with integrated controls to the left of the plot
