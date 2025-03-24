@@ -136,6 +136,22 @@ def register_callbacks(app) -> None:
                     return current_figure or {}, "", f"No data available with TER > {ter_threshold}", True
                 data = filtered_data
             
+            # Check if x_axis column has all null values
+            if x_axis in data.columns and data[x_axis].isna().all():
+                # Provide a warning message
+                warning_msg = f"All {x_axis} values are empty for the selected data"
+                return {}, "", warning_msg, True
+            
+            # Fill any remaining nulls with a placeholder to prevent axis issues
+            if x_axis in data.columns and data[x_axis].isna().any():
+                data[x_axis] = data[x_axis].fillna('Unknown')
+                
+            # Drop any rows with null TPM values as they can't be plotted
+            if 'TPM' in data.columns:
+                data = data.dropna(subset=['TPM'])
+                if data.empty:
+                    return {}, "", "No non-null TPM values available for the selected data", True
+            
             # Common hover data for all plot types
             hover_cols = ['GeneName', 'DatasetName', 'SubsetName', 'TissueName',
                           'SubstrateType', 'Gender', 'Stage', 'Status',
@@ -226,6 +242,21 @@ def register_callbacks(app) -> None:
             # Process data for scatter plot
             gene1_data = data[data['GeneName'] == gene1].copy()
             gene2_data = data[data['GeneName'] == gene2].copy()
+            
+            # Check for empty datasets after filtering
+            if gene1_data.empty:
+                return current_figure or {}, f"No data available for {gene1} with the current filters", True
+            if gene2_data.empty:
+                return current_figure or {}, f"No data available for {gene2} with the current filters", True
+            
+            # Drop any rows with null TPM values
+            gene1_data = gene1_data.dropna(subset=['TPM'])
+            gene2_data = gene2_data.dropna(subset=['TPM'])
+            
+            if gene1_data.empty:
+                return current_figure or {}, f"No non-null TPM values available for {gene1}", True
+            if gene2_data.empty:
+                return current_figure or {}, f"No non-null TPM values available for {gene2}", True
             
             gene1_count = len(gene1_data)
             gene2_count = len(gene2_data)
