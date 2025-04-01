@@ -7,7 +7,7 @@ from components.plots import gene_expression_plot, gene_comparison_plot
 def create_control_section(title, controls):
     """Helper to create consistent control cards"""
     return dbc.Card([
-        dbc.CardHeader(title, className="p-2"),
+        #dbc.CardHeader(title, className="p-2"),
         dbc.CardBody(controls, className="p-2")
     ], className="mb-3")
 
@@ -116,7 +116,6 @@ def gene_dashboard_layout() -> html.Div:
         
         # Main Content using a vertical layout
         dbc.Container([
-            # Fixed position error alert (won't push content down)
             dbc.Alert(
                 id="error-alert",
                 className="mb-2",

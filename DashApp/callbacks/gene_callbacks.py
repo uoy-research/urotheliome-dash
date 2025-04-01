@@ -3,7 +3,7 @@ from dash.dependencies import Input, Output, State
 import plotly.express as px
 import plotly.graph_objects as go
 from data.fetch_data import fetch_gene_expression_data
-from typing import Dict, Any, Tuple, List
+from typing import Dict, Any, Tuple
 import numpy as np
 from scipy import stats
 
@@ -203,7 +203,7 @@ def register_callbacks(app) -> None:
         prevent_initial_call=True,
     )
     def update_comparison_plot(gene1: str, gene2: str, selected_datasets: list, 
-                              active_tab: str, ter_threshold: int, current_figure: Dict[str, Any]) -> Tuple[Dict[str, Any], str, bool]:
+        active_tab: str, ter_threshold: int, current_figure: Dict[str, Any]) -> Tuple[Dict[str, Any], str, bool]:
         ctx = callback_context
         if not ctx.triggered or active_tab != "gene-comparison" and ctx.triggered[0]['prop_id'].split('.')[0] != "tabs":
             return no_update, no_update, no_update
@@ -215,11 +215,14 @@ def register_callbacks(app) -> None:
         # Check for required selections
         if not gene1 or not gene2:
             missing = "first" if not gene1 else "second"
-            return current_figure or {}, f"Please select the {missing} gene", True
+            message = f"Please select the {missing} gene"
+            return create_empty_comparison_plot(gene1, gene2, message), message, True
         if gene1 == gene2:
-            return current_figure or {}, "Please select different genes for comparison", True
+            message = "Please select different genes for comparison"
+            return create_empty_comparison_plot(gene1, gene2, message), message, True
         if not selected_datasets:
-            return current_figure or {}, "Please select at least one dataset", True
+            message = "Please select at least one dataset"
+            return create_empty_comparison_plot(gene1, gene2, message), message, True
         
         # Handle None value when the input is empty
         if ter_threshold is None:
@@ -230,13 +233,15 @@ def register_callbacks(app) -> None:
             data = fetch_gene_expression_data((gene1, gene2), tuple(selected_datasets))
             
             if data.empty:
-                return current_figure or {}, "No data available for the selected combination", True
+                message = "No data available for the selected combination"
+                return create_empty_comparison_plot(gene1, gene2, message, ter_threshold), message, True
              
             # Filter by TER threshold
             if ter_threshold > 0:
                 filtered_data = data[data['TER'] > ter_threshold]
                 if filtered_data.empty:
-                    return current_figure or {}, f"No data available with TER > {ter_threshold}", True
+                    message = f"No data available with TER > {ter_threshold}"
+                    return create_empty_comparison_plot(gene1, gene2, message, ter_threshold), message, True
                 data = filtered_data
                
             # Process data for scatter plot
@@ -245,18 +250,22 @@ def register_callbacks(app) -> None:
             
             # Check for empty datasets after filtering
             if gene1_data.empty:
-                return current_figure or {}, f"No data available for {gene1} with the current filters", True
+                message = f"No data available for {gene1} with the current filters"
+                return create_empty_comparison_plot(gene1, gene2, message, ter_threshold), message, True
             if gene2_data.empty:
-                return current_figure or {}, f"No data available for {gene2} with the current filters", True
+                message = f"No data available for {gene2} with the current filters"
+                return create_empty_comparison_plot(gene1, gene2, message, ter_threshold), message, True
             
             # Drop any rows with null TPM values
             gene1_data = gene1_data.dropna(subset=['TPM'])
             gene2_data = gene2_data.dropna(subset=['TPM'])
             
             if gene1_data.empty:
-                return current_figure or {}, f"No non-null TPM values available for {gene1}", True
+                message = f"No non-null TPM values available for {gene1}"
+                return create_empty_comparison_plot(gene1, gene2, message, ter_threshold), message, True
             if gene2_data.empty:
-                return current_figure or {}, f"No non-null TPM values available for {gene2}", True
+                message = f"No non-null TPM values available for {gene2}"
+                return create_empty_comparison_plot(gene1, gene2, message, ter_threshold), message, True
             
             gene1_count = len(gene1_data)
             gene2_count = len(gene2_data)
@@ -270,7 +279,8 @@ def register_callbacks(app) -> None:
             gene2_data = gene2_data.rename(columns={'TPM': f'{gene2}_TPM'})
             
             if 'SampleId' not in gene1_data.columns:
-                return current_figure or {}, "Sample ID information is not available for proper gene comparison", True
+                message = "Sample ID information is not available for proper gene comparison"
+                return create_empty_comparison_plot(gene1, gene2, message, ter_threshold), message, True
             
             # Prepare data for merge
             gene1_cols = ['SampleId'] + available_metadata + [f'{gene1}_TPM']
@@ -285,7 +295,8 @@ def register_callbacks(app) -> None:
             
             if merged_data.empty:
                 diag_message = f"Found {gene1_count} samples for {gene1}, {gene2_count} samples for {gene2}, and 0 matching samples."
-                return current_figure or {}, f"No matching samples found for both genes. {diag_message}", True
+                message = f"No matching samples found for both genes. {diag_message}"
+                return create_empty_comparison_plot(gene1, gene2, message, ter_threshold), message, True
                 
             # Create scatter plot
             hover_data = {'SampleId': True, f'{gene1}_TPM': True, f'{gene2}_TPM': True}
@@ -296,7 +307,7 @@ def register_callbacks(app) -> None:
             fig = px.scatter(
                 merged_data, 
                 x=f'{gene1}_TPM', 
-                y=f'{gene2}_TPM', 
+                y=f'{gene2}_TPM',
                 color="DatasetName" if "DatasetName" in merged_data.columns else None,
                 hover_data=hover_data,
                 opacity=0.7,
@@ -347,6 +358,21 @@ def register_callbacks(app) -> None:
                 x_values = merged_data[f'{gene1}_TPM'].values
                 y_values = merged_data[f'{gene2}_TPM'].values
                 
+                #print(f"x_values: {x_values}")
+                #print(f"y_values: {y_values}")
+                
+                # Calculate Pearson correlation
+                pearson_corr, p_value = stats.pearsonr(x_values, y_values)
+                
+                # Calculate Spearman correlation
+                spearman_corr, spearman_p = stats.spearmanr(x_values, y_values)
+                
+                # Calculate Pearson correlation for log10(TPM+1)
+                log_x = np.log10(x_values + 1)
+                log_y = np.log10(y_values + 1)
+                pearson_corr_log, p_value_log = stats.pearsonr(log_x, log_y)
+                
+                # Standard regression line calculation
                 slope, intercept, r_value, p_value, std_err = stats.linregress(x_values, y_values)
                 r_squared = r_value**2
                 
@@ -364,11 +390,84 @@ def register_callbacks(app) -> None:
                     )
                 )
                 
-                # Add regression equation to title
+                # Create a string with all correlation information
+                correlation_text = (
+                    f"Pearson: {pearson_corr:.3f}, "
+                    f"Pearson log10(TPM+1): {pearson_corr_log:.3f}, "
+                    f"Spearman: {spearman_corr:.3f}"
+                )
+                
+                # Add regression equation and correlation coefficients to title
                 regression_text = f"(y = {slope:.2f}x + {intercept:.2f}, R² = {r_squared:.2f})"
                 fig.update_layout(title=f"{plot_title} - {regression_text}")
+                
+                # Add correlation coefficients as an annotation at the bottom of the plot
+                fig.add_annotation(
+                    xref="paper", yref="paper",
+                    x=0.5, y=0,
+                    text=correlation_text,
+                    showarrow=False,
+                    font=dict(size=12),
+                    bgcolor="rgba(255,255,255,0.8)",
+                    bordercolor="rgba(0,0,0,0.2)",
+                    borderwidth=1,
+                    borderpad=4,
+                    align="center"
+                )
             
             return apply_common_styling(fig), "", False
                 
         except Exception as e:
-            return current_figure or {}, f"Error generating comparison plot: {str(e)}", True
+            message = f"Error generating comparison plot: {str(e)}"
+            return create_empty_comparison_plot(gene1, gene2, message, ter_threshold), message, True
+
+    def create_empty_comparison_plot(gene1, gene2, message, ter_threshold=None):
+        """Helper function to create an empty comparison plot with appropriate labels"""
+        fig = px.scatter(
+            x=[0], y=[0],  # Dummy data that won't be visible
+            labels={'x': f"{gene1 or 'Gene 1'} Expression (TPM)", 
+                   'y': f"{gene2 or 'Gene 2'} Expression (TPM)"}
+        )
+        
+        # Build an appropriate title
+        if gene1 and gene2:
+            title = f"Gene Comparison: {gene1} vs {gene2}"
+        elif gene1:
+            title = f"Gene Comparison: {gene1} vs (select second gene)"
+        elif gene2:
+            title = f"Gene Comparison: (select first gene) vs {gene2}"
+        else:
+            title = "Gene Comparison (select genes)"
+            
+        # Add TER threshold to title if provided
+        if ter_threshold and ter_threshold > 0:
+            title += f" (TER > {ter_threshold})"
+            
+        # Add the error context to title
+        title += f" - {message}"
+        
+        fig.update_layout(
+            title=title,
+            xaxis_title=f"{gene1 or 'Gene 1'} Expression (TPM)",
+            yaxis_title=f"{gene2 or 'Gene 2'} Expression (TPM)"
+        )
+        
+        # Add placeholder for correlation coefficients (will be empty in error state)
+        fig.add_annotation(
+            xref="paper", yref="paper",
+            x=0.5, y=0,
+            text="No correlation data available",
+            showarrow=False,
+            font=dict(size=12, color="rgba(150,150,150,0.8)"),
+            bgcolor="rgba(255,255,255,0.8)",
+            bordercolor="rgba(0,0,0,0.2)",
+            borderwidth=1,
+            borderpad=4,
+            align="center",
+            opacity=0.7
+        )
+        
+        # Hide the dummy point
+        fig.update_traces(marker={'opacity': 0})
+        
+        return apply_common_styling(fig)
