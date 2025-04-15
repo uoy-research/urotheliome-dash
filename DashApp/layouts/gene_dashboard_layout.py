@@ -79,6 +79,7 @@ def gene_dashboard_layout() -> html.Div:
     ]
 
     # TER slider control for global controls
+    # max value is currently hardcoded, but should be dynamically updated based on the data
     ter_control = [
         html.Label("Transepithelial Electrical Resistance barrier (TER) threshold", 
                   htmlFor="ter-input", className="fw-bold"),

@@ -151,19 +151,13 @@ def register_callbacks(app) -> None:
             
             # Filter by TER threshold
             if ter_threshold > 0:
-                filtered_data = data[data['TER'] > ter_threshold]
+                filtered_data = data[data['TER'] > ter_threshold].copy()
                 if filtered_data.empty:
                     return {}, "", html.Strong(f"No data available with TER > {ter_threshold}"), True
                 data = filtered_data
             
-            # Check if x_axis column has all null values
-            if x_axis in data.columns and data[x_axis].isna().all():
-                # Provide a warning message
-                warning_msg = f"All {x_axis} values are empty for the selected data"
-                return {}, "", html.Strong(warning_msg), True
-            
-            # Fill any remaining nulls with a placeholder to prevent axis issues
-            if x_axis in data.columns and data[x_axis].isna().any():
+            # Fill any nulls in x_axis column with 'Unknown', including when all values are null
+            if x_axis in data.columns:
                 data[x_axis] = data[x_axis].fillna('Unknown')
                 
             # Drop any rows with null TPM values as they can't be plotted
@@ -262,7 +256,7 @@ def register_callbacks(app) -> None:
              
             # Filter by TER threshold
             if ter_threshold > 0:
-                filtered_data = data[data['TER'] > ter_threshold]
+                filtered_data = data[data['TER'] > ter_threshold].copy()
                 if filtered_data.empty:
                     message = f"No data available with TER > {ter_threshold}"
                     return create_empty_comparison_plot(gene1, gene2, message, ter_threshold), html.Strong(message), True
