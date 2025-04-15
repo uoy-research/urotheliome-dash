@@ -6,6 +6,7 @@ from data.fetch_data import fetch_gene_expression_data
 from typing import Dict, Any, Tuple
 import numpy as np
 from scipy import stats
+from dash import html
 
 def register_callbacks(app) -> None:
     """Register all callbacks for the application"""
@@ -40,7 +41,10 @@ def register_callbacks(app) -> None:
         return no_update
     
     @app.callback(
-        [Output("error-alert", "children"), Output("error-alert", "is_open")],
+        [Output("error-alert-viz", "children"), 
+         Output("error-alert-collapse-viz", "is_open"),
+         Output("error-alert-comp", "children"),
+         Output("error-alert-collapse-comp", "is_open")],
         [Input("dataset-radio", "value"),
          Input("gene-dropdown", "value"),
          Input("gene-comparison-dropdown-1", "value"),
@@ -52,19 +56,30 @@ def register_callbacks(app) -> None:
     def manage_error_messages(selected_datasets, selected_genes, gene1, gene2, active_tab, ter_threshold):
         ctx = callback_context
         if not ctx.triggered:
-            return no_update, no_update
+            return no_update, no_update, no_update, no_update
         
         trigger = ctx.triggered[0]['prop_id'].split('.')[0]
         
         # Clear error message for tab changes or relevant input changes
-        if (trigger == "tabs" or 
-            trigger == "dataset-radio" or
-            trigger == "ter-input" or
-            (trigger == "gene-dropdown" and active_tab == "gene-visualization") or
-            (trigger in ["gene-comparison-dropdown-1", "gene-comparison-dropdown-2"] and active_tab == "gene-comparison")):
-            return "", False
+        if trigger == "tabs":
+            # Clear all error messages on tab change
+            return "", False, "", False
         
-        return no_update, no_update
+        # Clear visualization tab errors
+        if (active_tab == "gene-visualization" and 
+            (trigger == "dataset-radio" or 
+             trigger == "ter-input" or 
+             trigger == "gene-dropdown")):
+            return "", False, no_update, no_update
+            
+        # Clear comparison tab errors
+        if (active_tab == "gene-comparison" and 
+            (trigger == "dataset-radio" or 
+             trigger == "ter-input" or 
+             trigger in ["gene-comparison-dropdown-1", "gene-comparison-dropdown-2"])):
+            return no_update, no_update, "", False
+        
+        return no_update, no_update, no_update, no_update
     
     def apply_common_styling(fig):
         """Apply common styling to all plots"""
@@ -88,8 +103,8 @@ def register_callbacks(app) -> None:
         output=[
             Output("gene-expression-plot", "figure"),
             Output("loading-indicator", "children"),
-            Output("error-alert", "children", allow_duplicate=True),
-            Output("error-alert", "is_open", allow_duplicate=True),
+            Output("error-alert-viz", "children", allow_duplicate=True),
+            Output("error-alert-collapse-viz", "is_open", allow_duplicate=True),
         ],
         inputs=[
             Input("gene-dropdown", "value"),
@@ -114,9 +129,9 @@ def register_callbacks(app) -> None:
         
         # Check for required selections
         if not selected_genes:
-            return {}, "", "Please select at least one gene", True
+            return {}, "", html.Strong("Please select at least one gene"), True
         if not selected_datasets:
-            return {}, "", "Please select at least one dataset", True
+            return {}, "", html.Strong("Please select at least one dataset"), True
             
         # Handle None value when the input is empty   
         if ter_threshold is None:
@@ -127,20 +142,20 @@ def register_callbacks(app) -> None:
             data = fetch_gene_expression_data(tuple(selected_genes), tuple(selected_datasets))
             
             if data.empty:
-                return current_figure or {}, "", "No data available for the selected combination", True
+                return current_figure or {}, "", html.Strong("No data available for the selected combination"), True
             
             # Filter by TER threshold
             if ter_threshold > 0:
                 filtered_data = data[data['TER'] > ter_threshold]
                 if filtered_data.empty:
-                    return current_figure or {}, "", f"No data available with TER > {ter_threshold}", True
+                    return current_figure or {}, "", html.Strong(f"No data available with TER > {ter_threshold}"), True
                 data = filtered_data
             
             # Check if x_axis column has all null values
             if x_axis in data.columns and data[x_axis].isna().all():
                 # Provide a warning message
                 warning_msg = f"All {x_axis} values are empty for the selected data"
-                return {}, "", warning_msg, True
+                return {}, "", html.Strong(warning_msg), True
             
             # Fill any remaining nulls with a placeholder to prevent axis issues
             if x_axis in data.columns and data[x_axis].isna().any():
@@ -150,7 +165,7 @@ def register_callbacks(app) -> None:
             if 'TPM' in data.columns:
                 data = data.dropna(subset=['TPM'])
                 if data.empty:
-                    return {}, "", "No non-null TPM values available for the selected data", True
+                    return {}, "", html.Strong("No non-null TPM values available for the selected data"), True
             
             # Common hover data for all plot types
             hover_cols = ['GeneName', 'DatasetName', 'SubsetName', 'TissueName',
@@ -184,13 +199,13 @@ def register_callbacks(app) -> None:
             return apply_common_styling(fig), "", "", False
             
         except Exception as e:
-            return current_figure or {}, "", f"Error generating plot: {str(e)}", True
+            return current_figure or {}, "", html.Strong(f"Error generating plot: {str(e)}"), True
     
     @app.callback(
         output=[
             Output("gene-comparison-plot", "figure"),
-            Output("error-alert", "children", allow_duplicate=True),
-            Output("error-alert", "is_open", allow_duplicate=True),
+            Output("error-alert-comp", "children", allow_duplicate=True),
+            Output("error-alert-collapse-comp", "is_open", allow_duplicate=True),
         ],
         inputs=[
             Input("gene-comparison-dropdown-1", "value"),
@@ -216,13 +231,13 @@ def register_callbacks(app) -> None:
         if not gene1 or not gene2:
             missing = "first" if not gene1 else "second"
             message = f"Please select the {missing} gene"
-            return create_empty_comparison_plot(gene1, gene2, message), message, True
+            return create_empty_comparison_plot(gene1, gene2, message), html.Strong(message), True
         if gene1 == gene2:
             message = "Please select different genes for comparison"
-            return create_empty_comparison_plot(gene1, gene2, message), message, True
+            return create_empty_comparison_plot(gene1, gene2, message), html.Strong(message), True
         if not selected_datasets:
             message = "Please select at least one dataset"
-            return create_empty_comparison_plot(gene1, gene2, message), message, True
+            return create_empty_comparison_plot(gene1, gene2, message), html.Strong(message), True
         
         # Handle None value when the input is empty
         if ter_threshold is None:
@@ -234,14 +249,14 @@ def register_callbacks(app) -> None:
             
             if data.empty:
                 message = "No data available for the selected combination"
-                return create_empty_comparison_plot(gene1, gene2, message, ter_threshold), message, True
+                return create_empty_comparison_plot(gene1, gene2, message, ter_threshold), html.Strong(message), True
              
             # Filter by TER threshold
             if ter_threshold > 0:
                 filtered_data = data[data['TER'] > ter_threshold]
                 if filtered_data.empty:
                     message = f"No data available with TER > {ter_threshold}"
-                    return create_empty_comparison_plot(gene1, gene2, message, ter_threshold), message, True
+                    return create_empty_comparison_plot(gene1, gene2, message, ter_threshold), html.Strong(message), True
                 data = filtered_data
                
             # Process data for scatter plot
@@ -251,10 +266,10 @@ def register_callbacks(app) -> None:
             # Check for empty datasets after filtering
             if gene1_data.empty:
                 message = f"No data available for {gene1} with the current filters"
-                return create_empty_comparison_plot(gene1, gene2, message, ter_threshold), message, True
+                return create_empty_comparison_plot(gene1, gene2, message, ter_threshold), html.Strong(message), True
             if gene2_data.empty:
                 message = f"No data available for {gene2} with the current filters"
-                return create_empty_comparison_plot(gene1, gene2, message, ter_threshold), message, True
+                return create_empty_comparison_plot(gene1, gene2, message, ter_threshold), html.Strong(message), True
             
             # Drop any rows with null TPM values
             gene1_data = gene1_data.dropna(subset=['TPM'])
@@ -262,10 +277,10 @@ def register_callbacks(app) -> None:
             
             if gene1_data.empty:
                 message = f"No non-null TPM values available for {gene1}"
-                return create_empty_comparison_plot(gene1, gene2, message, ter_threshold), message, True
+                return create_empty_comparison_plot(gene1, gene2, message, ter_threshold), html.Strong(message), True
             if gene2_data.empty:
                 message = f"No non-null TPM values available for {gene2}"
-                return create_empty_comparison_plot(gene1, gene2, message, ter_threshold), message, True
+                return create_empty_comparison_plot(gene1, gene2, message, ter_threshold), html.Strong(message), True
             
             gene1_count = len(gene1_data)
             gene2_count = len(gene2_data)
@@ -280,7 +295,7 @@ def register_callbacks(app) -> None:
             
             if 'SampleId' not in gene1_data.columns:
                 message = "Sample ID information is not available for proper gene comparison"
-                return create_empty_comparison_plot(gene1, gene2, message, ter_threshold), message, True
+                return create_empty_comparison_plot(gene1, gene2, message, ter_threshold), html.Strong(message), True
             
             # Prepare data for merge
             gene1_cols = ['SampleId'] + available_metadata + [f'{gene1}_TPM']
@@ -296,7 +311,7 @@ def register_callbacks(app) -> None:
             if merged_data.empty:
                 diag_message = f"Found {gene1_count} samples for {gene1}, {gene2_count} samples for {gene2}, and 0 matching samples."
                 message = f"No matching samples found for both genes. {diag_message}"
-                return create_empty_comparison_plot(gene1, gene2, message, ter_threshold), message, True
+                return create_empty_comparison_plot(gene1, gene2, message, ter_threshold), html.Strong(message), True
                 
             # Create scatter plot
             hover_data = {'SampleId': True, f'{gene1}_TPM': True, f'{gene2}_TPM': True}
@@ -419,7 +434,7 @@ def register_callbacks(app) -> None:
                 
         except Exception as e:
             message = f"Error generating comparison plot: {str(e)}"
-            return create_empty_comparison_plot(gene1, gene2, message, ter_threshold), message, True
+            return create_empty_comparison_plot(gene1, gene2, message, ter_threshold), html.Strong(message), True
 
     def create_empty_comparison_plot(gene1, gene2, message, ter_threshold=None):
         """Helper function to create an empty comparison plot with appropriate labels"""

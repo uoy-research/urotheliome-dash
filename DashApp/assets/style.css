@@ -21,19 +21,9 @@ body {
     margin-bottom: 1.5rem;
 }
 
-.card-title {
-    color: #2c3e50;
-    font-weight: 600;
-}
-
 /* Nav styling */
 .navbar {
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-}
-
-.navbar-brand {
-    font-weight: 600;
-    color: #2c3e50;
 }
 
 /* Tabs */

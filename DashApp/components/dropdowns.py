@@ -26,7 +26,8 @@ def xaxis_dropdown():
         {"label": "Dataset Subset", "value": "SubsetName"},
         {"label": "Tumor Stage", "value": "Stage"},
         {"label": "Vital Status", "value": "Status"},
-        {"label": "Sample ID", "value": "SampleId"}
+        {"label": "Sample ID", "value": "SampleId"},
+        {"label": "TER", "value": "TER"}
     ]
     return dcc.Dropdown(
         id="xaxis-dropdown",

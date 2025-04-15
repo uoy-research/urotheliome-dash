@@ -18,8 +18,21 @@ def create_plot_section(plot_component):
             dbc.CardBody([plot_component], className="p-2")
         ]),
         color="primary",
-        type="border",
+        type="grow",
         fullscreen=False,
+    )
+
+def create_error_card(tab_id):
+    """Helper to create consistent error message cards"""
+    return dbc.Collapse(
+        dbc.Card([
+            dbc.CardBody(
+                html.Div(id=f"error-alert-{tab_id}", className="text-danger"),
+                className="p-2"
+            )
+        ], className="mb-3 border-danger"),
+        id=f"error-alert-collapse-{tab_id}",
+        is_open=False,
     )
 
 def gene_dashboard_layout() -> html.Div:
@@ -76,10 +89,10 @@ def gene_dashboard_layout() -> html.Div:
                         id="ter-input",
                         type="number",
                         min=0,
-                        max=1000,
-                        step=10,
+                        max=5185.9,
+                        step=0.01,
                         value=0,
-                        placeholder="Enter TER threshold",
+                        placeholder="Enter TER threshold (up to 5185.9)",
                         className="mb-2"
                     )
                 ], width=10),
@@ -116,18 +129,12 @@ def gene_dashboard_layout() -> html.Div:
         
         # Main Content using a vertical layout
         dbc.Container([
-            dbc.Alert(
-                id="error-alert",
-                className="mb-2",
-                color="danger",
-                is_open=False,
-                dismissable=True,
-                style={"position": "fixed", "top": "70px", "right": "15px", 
-                       "width": "400px", "z-index": "1000", "opacity": "0.95"}
-            ),
-            
-            # Hidden div for loading indicator (removing unused error state stores)
+            # Hidden div for loading indicator
             html.Div(id="loading-indicator", style={"display": "none"}),
+            
+            # For backward compatibility with callbacks (these will be hidden)
+            # html.Div(id="error-alert", style={"display": "none"}),
+            # dbc.Collapse(id="error-alert-collapse", is_open=False, style={"display": "none"}),
             
             # Tabs with integrated controls to the left of the plot
             dbc.Tabs(
@@ -145,7 +152,8 @@ def gene_dashboard_layout() -> html.Div:
                             dbc.Row([
                                 # Left side - Visualization Controls (compact)
                                 dbc.Col([
-                                    create_control_section("Visualization Controls", viz_controls)
+                                    create_control_section("Visualization Controls", viz_controls),
+                                    create_error_card("viz")
                                 ], md=3, className="pe-0"),
                                 
                                 # Right side - Graph
@@ -166,7 +174,8 @@ def gene_dashboard_layout() -> html.Div:
                             dbc.Row([
                                 # Left side - Comparison Controls (compact)
                                 dbc.Col([
-                                    create_control_section("Comparison Controls", comp_controls)
+                                    create_control_section("Comparison Controls", comp_controls),
+                                    create_error_card("comp")
                                 ], md=3, className="pe-0"),
                                 
                                 # Right side - Graph
