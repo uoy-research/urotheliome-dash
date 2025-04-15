@@ -7,6 +7,7 @@ from typing import Dict, Any, Tuple
 import numpy as np
 from scipy import stats
 from dash import html
+import pandas as pd
 
 def register_callbacks(app) -> None:
     """Register all callbacks for the application"""
@@ -142,13 +143,17 @@ def register_callbacks(app) -> None:
             data = fetch_gene_expression_data(tuple(selected_genes), tuple(selected_datasets))
             
             if data.empty:
-                return current_figure or {}, "", html.Strong("No data available for the selected combination"), True
+                return {}, "", html.Strong("No data available for the selected combination"), True
+            
+            # Ensure TER is numeric
+            if 'TER' in data.columns:
+                data['TER'] = pd.to_numeric(data['TER'], errors='coerce')
             
             # Filter by TER threshold
             if ter_threshold > 0:
                 filtered_data = data[data['TER'] > ter_threshold]
                 if filtered_data.empty:
-                    return current_figure or {}, "", html.Strong(f"No data available with TER > {ter_threshold}"), True
+                    return {}, "", html.Strong(f"No data available with TER > {ter_threshold}"), True
                 data = filtered_data
             
             # Check if x_axis column has all null values
@@ -250,6 +255,10 @@ def register_callbacks(app) -> None:
             if data.empty:
                 message = "No data available for the selected combination"
                 return create_empty_comparison_plot(gene1, gene2, message, ter_threshold), html.Strong(message), True
+            
+            # Ensure TER is numeric
+            if 'TER' in data.columns:
+                data['TER'] = pd.to_numeric(data['TER'], errors='coerce')
              
             # Filter by TER threshold
             if ter_threshold > 0:
@@ -258,7 +267,7 @@ def register_callbacks(app) -> None:
                     message = f"No data available with TER > {ter_threshold}"
                     return create_empty_comparison_plot(gene1, gene2, message, ter_threshold), html.Strong(message), True
                 data = filtered_data
-               
+            
             # Process data for scatter plot
             gene1_data = data[data['GeneName'] == gene1].copy()
             gene2_data = data[data['GeneName'] == gene2].copy()
