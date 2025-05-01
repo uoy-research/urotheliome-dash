@@ -144,3 +144,7 @@ token.pickle
 *.DS_Store
 
 *.vscode/
+DashApp/*.vscode/
+DashApp/venv*/
+DashApp/.cursorignore
+requirementsBackUp.txt
