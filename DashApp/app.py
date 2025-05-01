@@ -1,0 +1,21 @@
+import dash
+from callbacks.gene_callbacks import register_callbacks
+from layouts.gene_dashboard_layout import gene_dashboard_layout
+import dash_bootstrap_components as dbc
+
+# Initialize Dash app with Bootstrap theme
+app = dash.Dash(
+    __name__,
+    external_stylesheets=[dbc.themes.BOOTSTRAP],
+    suppress_callback_exceptions=True
+)
+
+# Main Layout
+app.layout = gene_dashboard_layout()
+
+# Register callbacks (to update the UI based on user interaction)
+register_callbacks(app)
+
+# Run the app
+if __name__ == "__main__":
+    app.run(host='0.0.0.0', port=80, debug=True)

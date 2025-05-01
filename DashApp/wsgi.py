@@ -1,16 +1,13 @@
-
 import webbrowser
-
 import dash
 from dash import dcc, html
-from threading import Timer
 
-from plotlyflask.umap import umap as mf
-from plotlyflask.gene_diff import gene_diff as gd
-from plotlyflask.gene_viz import gene_viz as gv
-from plotlyflask.plotlydash.main import app
+from layouts import gene_dashboard_layout as gd
+from app import app
 
 server = app.server
+
+prerendered_gene_dashboard = gd.gene_dashboard_layout()
 
 index_page = html.Div([
     html.H1("Welcome to JBU's Data visualisation!"),
@@ -32,19 +29,17 @@ app.layout = html.Div([
               [dash.dependencies.Input('url', 'pathname')])
 def display_page(pathname):
     if pathname == '/gene-vis':
-        return gv.layout
+        return prerendered_gene_dashboard
     if pathname == '/gene-diff':
-        return gd.layout
+        return prerendered_gene_dashboard
     if pathname == '/manyfold':
-        return mf.layout
+        return prerendered_gene_dashboard
     else:
         return index_page
 
 def open_browser():
-    # webbrowser.open_new('http://127.0.0.1:8080/dashapp')
     webbrowser.open_new('http://127.0.0.1:8080/gene-diff')
     
 if __name__ == "__main__":
-    # Timer(1, open_browser).start()
-    server.run(host='0.0.0.0', port=8080, debug=True)
+    server.run(host='0.0.0.0', port=8050, debug=True)
 

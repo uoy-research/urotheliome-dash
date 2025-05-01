@@ -1,0 +1,152 @@
+body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background-color: #f8f9fa;
+    margin: 0;
+    padding: 0;
+    color: #333;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Main content should fill available space, pushing footer to bottom */
+#root {
+    flex: 1 0 auto;
+}
+
+/* Card styling */
+.card {
+    border: none;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    margin-bottom: 1.5rem;
+}
+
+/* Nav styling */
+.navbar {
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+/* Tabs */
+.nav-tabs {
+    border-bottom: 1px solid #dee2e6;
+}
+
+.nav-tabs .nav-link {
+    border: none;
+    color: #6c757d;
+    font-weight: 500;
+    padding: 0.75rem 1.25rem;
+}
+
+.nav-tabs .nav-link:hover {
+    border-color: transparent;
+    color: #212529;
+}
+
+.nav-tabs .nav-link.active {
+    color: #007bff;
+    background-color: transparent;
+    border-bottom: 2px solid #007bff;
+    font-weight: 600;
+}
+
+/* Footer */
+footer {
+    flex-shrink: 0;
+    width: 100%;
+}
+
+/* Inputs and controls */
+.form-control, .form-select {
+    border-radius: 0.25rem;
+    border: 1px solid #ced4da;
+}
+
+.form-label {
+    font-weight: 500;
+}
+
+/* Dataset radio styles */
+.dataset-radio-group {
+    column-count: 3;
+    column-gap: 1.5rem;
+}
+
+@media (max-width: 767.98px) {
+    .dataset-radio-group {
+        column-count: 2;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .dataset-radio-group {
+        column-count: 1;
+    }
+}
+
+.dataset-radio-group label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    transition: background-color 0.2s;
+    margin-bottom: 0.5rem;
+    break-inside: avoid-column;
+}
+
+.dataset-radio-group label:hover {
+    background-color: #f8f9fa;
+}
+
+.dataset-radio-group input[type="checkbox"] {
+    margin-right: 0.5rem;
+}
+
+/* Style for dropdowns with dbc class to match bootstrap style */
+.dbc .Select-control {
+    border-radius: 0.25rem;
+    border: 1px solid #ced4da;
+    min-height: 38px;
+}
+
+.dbc .Select-placeholder {
+    color: #6c757d;
+    padding: 6px 12px;
+}
+
+.dbc .Select-input {
+    padding-left: 12px;
+    padding-right: 12px;
+}
+
+.dbc .Select-menu-outer {
+    border-radius: 0.25rem;
+    margin-top: 3px;
+    border: 1px solid #ced4da;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    z-index: 1000;
+}
+
+.dbc .Select-option {
+    padding: 8px 12px;
+}
+
+.dbc .Select-option.is-focused {
+    background-color: #e9ecef;
+}
+
+.dbc .Select-option.is-selected {
+    background-color: #007bff;
+    color: white;
+}
+
+/* For the loading container */
+.text-center .dash-spinner {
+    margin: 0 auto;
+}
+
+/* Error message */
+.text-danger {
+    color: #dc3545;
+}
