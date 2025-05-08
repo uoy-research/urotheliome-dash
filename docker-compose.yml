@@ -7,7 +7,7 @@ services:
     env_file:
       - .env
     ports:
-      - "80:80"
+      - "8050:80"
     volumes:
       - ./DashApp:/usr/local/app/DashApp
       - ../data:/usr/local/app/data
