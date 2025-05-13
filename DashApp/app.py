@@ -15,6 +15,7 @@ app = dash.Dash(
 
 # Main Layout
 app.layout = gene_dashboard_layout()
+app.title = "Urotheliome"
 
 # Register callbacks (to update the UI based on user interaction)
 register_callbacks(app)
