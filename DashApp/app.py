@@ -11,7 +11,10 @@ load_dotenv()
 # Initialize Dash app with Bootstrap theme
 app = dash.Dash(
     __name__,
-    external_stylesheets=[dbc.themes.BOOTSTRAP],
+    external_stylesheets=[
+        dbc.themes.BOOTSTRAP,
+        dbc.icons.FONT_AWESOME  # Add Font Awesome for icons
+    ],
     suppress_callback_exceptions=True,
     use_pages=False  # We're using our own routing solution
 )
@@ -32,4 +35,4 @@ register_callbacks(app)         # For gene visualization
 
 # Run the app
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=80, debug=False)
+    app.run(host='0.0.0.0', port=80, debug=True)

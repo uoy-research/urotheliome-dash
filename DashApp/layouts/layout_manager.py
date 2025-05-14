@@ -6,6 +6,7 @@ from layouts.navigation import create_navbar
 from layouts.footer import create_footer
 from layouts.home_layout import home_layout
 from layouts.gene_dashboard_layout import gene_dashboard_layout
+from layouts.genome_browser_layout import genome_browser_layout, register_genome_browser_callbacks
 
 def create_layout():
     """
@@ -43,6 +44,11 @@ def register_layout_callbacks(app):
     def display_page(pathname):
         if pathname == "/gene-explorer" or pathname == "/gene-explorer/":
             return gene_dashboard_layout()
+        elif pathname == "/genome-browser" or pathname == "/genome-browser/":
+            return genome_browser_layout()
         else:
             # Default to home layout
-            return home_layout() 
+            return home_layout()
+            
+    # Register genome browser callbacks
+    register_genome_browser_callbacks(app) 
