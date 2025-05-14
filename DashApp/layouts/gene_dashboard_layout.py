@@ -110,22 +110,6 @@ def gene_dashboard_layout() -> html.Div:
     ]
 
     return html.Div([
-        # NavBar
-        dbc.Navbar(
-            dbc.Container(
-                dbc.Row([
-                    dbc.Col(
-                        html.H3("Gene Expression Dashboard", className="text-primary mb-0"),
-                        width="auto",
-                    ),
-                ]),
-                fluid=True,
-                style=container_style,
-            ),
-            color="light",
-            className="shadow-sm mb-3",
-        ),
-        
         # Main Content using a vertical layout
         dbc.Container([
             # Hidden div for loading indicator
@@ -198,28 +182,5 @@ def gene_dashboard_layout() -> html.Div:
                     *dataset_control
                 ]
             )
-        ], fluid=True, className="mb-4", style=container_style),  # Apply max-width constraint
-        
-        # Footer with disclaimer
-        html.Footer(
-            dbc.Container([
-                html.Hr(),
-                dbc.Row([
-                    dbc.Col(
-                        html.P([
-                            html.A("University of York Legal Statements", 
-                                  href="https://www.york.ac.uk/about/legal-statements/", 
-                                  target="_blank",
-                                  className="text-muted")
-                        ], className="small")
-                    ),
-                    dbc.Col([
-                        html.P([
-                            "© ", html.Time("2025"), " University of York"
-                        ], className="text-muted small text-end")
-                    ], width=3)
-                ])
-            ], fluid=True, className="py-2", style=container_style),  # Apply max-width constraint
-            className="bg-light mt-auto py-2"
-        )
+        ], style=container_style),
     ])
