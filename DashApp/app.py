@@ -2,6 +2,7 @@ import dash
 from callbacks.gene_callbacks import register_callbacks
 from layouts.gene_dashboard_layout import gene_dashboard_layout
 import dash_bootstrap_components as dbc
+import dash_mantine_components as dmc
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -14,7 +15,12 @@ app = dash.Dash(
 )
 
 # Main Layout
-app.layout = gene_dashboard_layout()
+app.layout = dmc.MantineProvider(
+    theme={
+        "colorScheme": "light",
+    },
+    children=gene_dashboard_layout()
+)
 app.title = "Urotheliome"
 
 # Register callbacks (to update the UI based on user interaction)
