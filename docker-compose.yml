@@ -9,5 +9,4 @@ services:
     ports:
       - "127.0.0.1:8050:80"
     volumes:
-      - ./DashApp:/usr/local/app/DashApp
       - ../data:/usr/local/app/data

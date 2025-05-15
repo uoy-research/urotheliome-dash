@@ -147,3 +147,4 @@ DashApp/*.vscode/
 DashApp/venv*/
 DashApp/.cursorignore
 requirementsBackUp.txt
+*.js
