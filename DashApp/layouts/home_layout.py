@@ -29,21 +29,6 @@ def home_layout() -> html.Div:
         className="mb-4 shadow-sm"
     )
     
-    # Logo section with placeholders for 5 logos (using CSS instead of images)
-    logo_section = dbc.Card(
-        dbc.CardBody([
-            # html.H3("Our Partners", className="card-title text-primary mb-4"),
-            dbc.Row([
-                dbc.Col([
-                    html.Div([
-                        html.Span("Partner Logo", className="placeholder-logo-text")
-                    ], className="placeholder-logo m-2"),
-                ], width={"size": 2}, className="text-center") for _ in range(5)
-            ], justify="around", align="center"),
-        ]),
-        className="mb-4 shadow-sm"
-    )
-    
     # Usage guide section
     guide_section = dbc.Card(
         dbc.CardBody([
@@ -71,6 +56,27 @@ def home_layout() -> html.Div:
         className="mb-4 shadow-sm"
     )
     
+    # Logo section - now positioned at the bottom with alternating heights
+    partners_heading = html.H3("Sponsored by", className="text-primary text-center mt-5 mb-5")
+    
+    # Top row with 2 logos (taller)
+    logo_row_top = dbc.Row([
+        dbc.Col(html.Img(src="/assets/Logos/york-biology-logo.jpg", className="img-fluid", style={"height": "120px"}), 
+                width="auto", className="text-center mx-5 px-4"),
+        dbc.Col(html.Img(src="/assets/Logos/ukri-bbsrc-square-logo.png", className="img-fluid", style={"height": "120px"}), 
+                width="auto", className="text-center mx-5 px-4"),
+    ], justify="center", align="center", className="mb-4")
+    
+    # Bottom row with 3 logos (shorter)
+    logo_row_bottom = dbc.Row([
+        dbc.Col(html.Img(src="/assets/Logos/ybri-white-logo.png", className="img-fluid", style={"height": "90px", "background-color": "gray", "padding": "10px"}), 
+                width="auto", className="text-center mx-5"),
+        dbc.Col(html.Img(src="/assets/Logos/YAC-logo-long.png", className="img-fluid", style={"height": "90px", "padding": "10px"}), 
+                width="auto", className="text-center mx-5"),
+        dbc.Col(html.Img(src="/assets/Logos/Astellas-logo.svg", className="img-fluid", style={"height": "90px", "padding": "10px"}), 
+                width="auto", className="text-center mx-5"),
+    ], justify="center", align="center", className="mb-5")
+    
     return html.Div([
         dbc.Container([
             html.H1("Welcome to the Urotheliome Project", 
@@ -81,11 +87,11 @@ def home_layout() -> html.Div:
             ]),
             
             dbc.Row([
-                dbc.Col([logo_section], md=12)
-            ]),
-            
-            dbc.Row([
                 dbc.Col([guide_section], md=12)
             ]),
+            
+            partners_heading,
+            logo_row_top,
+            logo_row_bottom
         ], style=container_style),
     ]) 
