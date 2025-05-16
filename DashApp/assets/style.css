@@ -23,7 +23,50 @@ body {
 
 /* Nav styling */
 .navbar {
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    background-color: #ffffff !important;
+    padding: 0.5rem 1rem;
+}
+
+.navbar-brand {
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+}
+
+.navbar .nav-link {
+    color: #495057 !important;
+    font-weight: 500;
+    padding: 0.4rem 0.8rem !important;
+    margin: 0 0.2rem;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+}
+
+.navbar .nav-link:hover {
+    color: #0d6efd !important;
+    background-color: rgba(13, 110, 253, 0.05);
+}
+
+.navbar .nav-link.active {
+    color: #0d6efd !important;
+    background-color: rgba(13, 110, 253, 0.1);
+    font-weight: 600;
+}
+
+/* Update placeholder logo styling for navbar */
+.navbar .placeholder-logo {
+    background-color: #ffffff;
+    border: 2px solid #0d6efd;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    vertical-align: middle;
+}
+
+.text-primary {
+    --bs-text-opacity: 1;
+    color: #2c3882 !important;
 }
 
 /* Tabs */
@@ -182,3 +225,13 @@ html, body {
 .min-vh-100 {
   min-height: 100vh !important;
 }
+
+/* .text-primary {
+    --bs-text-opacity: 1;
+    color: #2c3882 !important;
+}
+
+.navbar {
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    background-color: #ffffff !important;
+} */
