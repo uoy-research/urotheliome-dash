@@ -1,7 +1,8 @@
 FROM python:3.12
 WORKDIR /usr/local/app/DashApp
 
-COPY . ..
+COPY requirements.txt ../requirements.txt
+COPY DashApp/ ./
 EXPOSE 8080
 
 RUN pip install -r ../requirements.txt
