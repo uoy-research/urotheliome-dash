@@ -24,8 +24,8 @@ def create_layout():
             create_navbar(),
             
             # Content - changes based on URL
-            html.Div(id="page-content")
-        ], className="px-0 d-flex flex-column min-vh-100"),
+            html.Div(id="page-content",)
+        ], className="px-0 d-flex flex-column", style={"min-height": "90vh",}),
         
         # Footer - consistent across all pages
         create_footer()

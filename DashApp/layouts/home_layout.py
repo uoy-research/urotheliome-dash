@@ -13,7 +13,7 @@ def home_layout() -> html.Div:
     # Mission statement section
     mission_section = dbc.Card(
         dbc.CardBody([
-            html.H3("Mission Statement", className="card-title text-primary"),
+            html.H3("About", className="card-title text-primary"),
             html.P(
                 "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod "
                 "tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim "
@@ -41,7 +41,7 @@ def home_layout() -> html.Div:
                 ]),
                 dbc.ListGroupItem([
                     html.Strong("2. Select genes of interest: "),
-                    "Use the searchable dropdown menu to select the genes you wish to analyze."
+                    "Use the searchable dropdown menu to select the gene(s) you wish to analyze."
                 ]),
                 dbc.ListGroupItem([
                     html.Strong("3. Choose visualization options: "),
@@ -57,7 +57,7 @@ def home_layout() -> html.Div:
     )
     
     # Logo section - now positioned at the bottom with alternating heights
-    partners_heading = html.H3("Sponsored by", className="text-primary text-center mt-5 mb-5")
+    partners_heading = html.H3("Supported by", className="text-primary text-center mt-5 mb-5")
     
     # Top row with 2 logos (taller)
     logo_row_top = dbc.Row([
