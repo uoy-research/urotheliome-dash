@@ -7,6 +7,7 @@ from layouts.footer import create_footer
 from layouts.home_layout import home_layout
 from layouts.gene_dashboard_layout import gene_dashboard_layout
 from layouts.genome_browser_layout import genome_browser_layout, register_genome_browser_callbacks
+from layouts.accessibility_layout import accessibility_layout
 
 def create_layout():
     """
@@ -46,6 +47,8 @@ def register_layout_callbacks(app):
             return gene_dashboard_layout()
         elif pathname == "/genome-browser" or pathname == "/genome-browser/":
             return genome_browser_layout()
+        elif pathname == "/accessibility" or pathname == "/accessibility/":
+            return accessibility_layout()
         else:
             # Default to home layout
             return home_layout()

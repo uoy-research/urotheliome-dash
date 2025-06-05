@@ -18,6 +18,10 @@ def create_footer():
                             html.A("University of York Legal Statements", 
                                   href="https://www.york.ac.uk/about/legal-statements/", 
                                   target="_blank",
+                                  className="text-muted"),
+                            " | ",
+                            html.A("Accessibility", 
+                                  href="/accessibility", 
                                   className="text-muted")
                         ], className="small")
                     ),

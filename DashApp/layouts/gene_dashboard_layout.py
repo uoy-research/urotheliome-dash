@@ -124,12 +124,16 @@ def gene_dashboard_layout() -> html.Div:
                 id="tabs",
                 active_tab="gene-visualization",
                 className="mb-3",
+                persistence=True,
+                persistence_type="memory",
                 children=[
                     # Visualization Tab
                     dbc.Tab(
                         label="Gene Visualization",
                         tab_id="gene-visualization",
                         labelClassName="fw-bold",
+                        id="gene-visualization-tab",
+                        key="gene-visualization",
                         children=[
                             # Row containing controls on left, plot on right
                             dbc.Row([
@@ -152,6 +156,8 @@ def gene_dashboard_layout() -> html.Div:
                         label="Gene Comparison",
                         tab_id="gene-comparison",
                         labelClassName="fw-bold",
+                        id="gene-comparison-tab",
+                        key="gene-comparison",
                         children=[
                             # Row containing controls on left, plot on right
                             dbc.Row([
