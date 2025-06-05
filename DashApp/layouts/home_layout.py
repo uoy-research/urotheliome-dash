@@ -61,19 +61,19 @@ def home_layout() -> html.Div:
     
     # Top row with 2 logos (taller)
     logo_row_top = dbc.Row([
-        dbc.Col(html.Img(src="/assets/Logos/york-biology-logo.jpg", className="img-fluid", style={"height": "120px"}), 
+        dbc.Col(html.Img(src="/assets/Logos/york-biology-logo.jpg", className="img-fluid", style={"height": "120px"}, alt="University of York Biology Department logo"), 
                 width="auto", className="text-center mx-5 px-4"),
-        dbc.Col(html.Img(src="/assets/Logos/ukri-bbsrc-square-logo.png", className="img-fluid", style={"height": "120px"}), 
+        dbc.Col(html.Img(src="/assets/Logos/ukri-bbsrc-square-logo.png", className="img-fluid", style={"height": "120px"}, alt="UKRI BBSRC funding logo"), 
                 width="auto", className="text-center mx-5 px-4"),
     ], justify="center", align="center", className="mb-4")
     
     # Bottom row with 3 logos (shorter)
     logo_row_bottom = dbc.Row([
-        dbc.Col(html.Img(src="/assets/Logos/ybri-white-logo.png", className="img-fluid", style={"height": "90px", "background-color": "gray", "padding": "10px"}), 
+        dbc.Col(html.Img(src="/assets/Logos/ybri-white-logo.png", className="img-fluid", style={"height": "90px", "background-color": "gray", "padding": "10px"}, alt="York Biomedical Research Institute logo"), 
                 width="auto", className="text-center mx-5"),
-        dbc.Col(html.Img(src="/assets/Logos/YAC-logo-long.png", className="img-fluid", style={"height": "90px", "padding": "10px"}), 
+        dbc.Col(html.Img(src="/assets/Logos/YAC-logo-long.png", className="img-fluid", style={"height": "90px", "padding": "10px"}, alt="York Against Cancer logo"), 
                 width="auto", className="text-center mx-5"),
-        dbc.Col(html.Img(src="/assets/Logos/Astellas-logo.svg", className="img-fluid", style={"height": "90px", "padding": "10px"}), 
+        dbc.Col(html.Img(src="/assets/Logos/Astellas-logo.svg", className="img-fluid", style={"height": "90px", "padding": "10px"}, alt="Astellas Pharma logo"), 
                 width="auto", className="text-center mx-5"),
     ], justify="center", align="center", className="mb-5")
     

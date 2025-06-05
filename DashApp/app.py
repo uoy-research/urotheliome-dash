@@ -19,6 +19,27 @@ app = dash.Dash(
     use_pages=False  # We're using our own routing solution
 )
 
+# Set HTML lang attribute for accessibility
+app.index_string = '''
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        {%metas%}
+        <title>{%title%}</title>
+        {%favicon%}
+        {%css%}
+    </head>
+    <body>
+        {%app_entry%}
+        <footer>
+            {%config%}
+            {%scripts%}
+            {%renderer%}
+        </footer>
+    </body>
+</html>
+'''
+
 # Set the main layout with the layout manager
 app.layout = dmc.MantineProvider(
     theme={
@@ -35,4 +56,4 @@ register_callbacks(app)         # For gene visualization
 
 # Run the app
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=80, debug=True)
+    app.run(host='0.0.0.0', port=80, debug=False)

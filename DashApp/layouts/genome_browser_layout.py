@@ -2,6 +2,7 @@ from dash import html, dcc
 import dash_bootstrap_components as dbc
 import dash_bio as dashbio
 from dash.dependencies import Input, Output
+import dash_mantine_components as dmc
 
 def genome_browser_layout() -> html.Div:
     """
@@ -37,13 +38,11 @@ def genome_browser_layout() -> html.Div:
                     
                     dbc.Row([
                         dbc.Col([
-                            html.Label("Select Genome:", className="fw-bold mb-2"),
-                            dcc.Dropdown(
+                            html.Label("Select Genome:", className="fw-bold mb-2", htmlFor="genome-browser-select"),
+                            dmc.Select(
                                 id="genome-browser-select",
-                                options=[
-                                    {'value': '', 'label': 'Select a genome...'}
-                                ] + HOSTED_GENOME_DICT,
-                                value='',  # Default to empty/no selection
+                                data=HOSTED_GENOME_DICT,
+                                placeholder="Select a genome...",
                                 clearable=False,
                                 className="mb-4"
                             )

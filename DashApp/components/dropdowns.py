@@ -27,13 +27,12 @@ def xaxis_dropdown():
         {"label": "Sample ID", "value": "SampleId"},
         {"label": "TER", "value": "TER"}
     ]
-    return dcc.Dropdown(
+    return dmc.Select(
         id="xaxis-dropdown",
-        options=options,
+        data=options,
         value="GeneName",
         clearable=False,
         placeholder="Select X-axis...",
-        className="dbc"
     )
 
 def gene_comparison_dropdown_1():
