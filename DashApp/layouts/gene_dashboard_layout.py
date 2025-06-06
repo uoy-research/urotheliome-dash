@@ -123,7 +123,7 @@ def gene_dashboard_layout() -> html.Div:
             dbc.Tabs(
                 id="tabs",
                 active_tab="gene-visualization",
-                className="mb-3",
+                className="mb-0",
                 persistence=True,
                 persistence_type="memory",
                 children=[

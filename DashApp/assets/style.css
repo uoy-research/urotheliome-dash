@@ -79,7 +79,7 @@ body {
     color: #212529 !important; /* Darker color for better contrast */
     background-color: #f8f9fa; /* Light background for inactive tabs */
     font-weight: 500;
-    padding: 0.75rem 1.25rem;
+    padding: 0.5rem 0.75rem;
     border: 1px solid #dee2e6;
     border-bottom: none;
     margin-right: 2px;
@@ -99,7 +99,6 @@ body {
     font-weight: 600;
 }
 
-/* Ensure tab panels have proper ARIA labeling */
 .tab-content .tab-pane {
     background-color: #ffffff;
     border: 1px solid #dee2e6;
