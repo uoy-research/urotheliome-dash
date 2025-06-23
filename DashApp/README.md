@@ -9,14 +9,13 @@ Interactive dashboard for visualizing JBU gene expression data using Dash and SQ
 - Dynamic x-axis selection (Gene, NHU, Tissue, Gender, etc.)
 - Easy to build on structure
 - SQLite database backend
+- Docker Compose
 
 ## Project Structure
 
 ```
 urotheliome-dash/
 ├── app.py                       # Application entry point
-├── UrotheliomeData.db           # indexed SQLite database
-├── urotheliome_data_2.db        # old unindexed SQLite database
 ├── assets/                      # CSS styles / images
 ├── callbacks/                   # Function callbacks (update ui based on user input)
 ├── components/                  # Dash UI components (Dropdowns, radio-buttons)
@@ -25,13 +24,20 @@ urotheliome-dash/
 └── layouts/                     # Page layouts
 ```
 
+UrotheliomeData.db can be placed anywhere.
+Remember to set the DATABASE_PATH env variable.
+```
+├── UrotheliomeData.db           # indexed SQLite database
+```
+
 ## Usage
 
+0. Set the DATABASE_PATH env variable
 1. Run application:
 ```bash
-python app.py
+docker compose up -d
 ```
-2. Open browser: `http://localhost:8050`
+2. Open browser: `http://localhost:8080`
 3. Select:
    - Genes to visualize
    - X-axis variable
