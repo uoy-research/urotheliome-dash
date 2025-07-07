@@ -1,125 +1,150 @@
-# 1. JBU Visualisation tool
+# Urotheliome Gene Expression Dashboard
 
-This is a tool that it is used by the JBU unit to visualise a gene's TPM's values across different datasets. The application runs at: `http://localhost:8080/dashapp/`
+Interactive web application for visualizing JBU gene expression data, built with Dash and SQLite. This project provides researchers with tools to explore gene expression patterns across multiple datasets.
 
-<!-- TOC -->
+## Live Application
 
-- [1. JBU Visualisation tool](#1-jbu-visualisation-tool)
-- [2. Requirements](#2-requirements)
-- [3. Installation](#3-installation)
-  - [3.1. Adding a new dataset](#31-adding-a-new-dataset)
-- [4. Features](#4-features)
-- [5. Wishlist](#5-wishlist)
-- [6. Notes on implementation](#6-notes-on-implementation)
-  - [6.1. Technologies](#61-technologies)
-  - [6.2. Why Flask + Dash](#62-why-flask--dash)
-  - [6.3. Architecture](#63-architecture)
-  - [6.4. Tips](#64-tips)
-- [7. (Google) Cloud integration](#7-google-cloud-integration)
+The application is hosted at: **https://urotheliome.york.ac.uk/**
 
-<!-- /TOC -->
+## Project Background
 
-# 2. Requirements
+This project was originally started by a PhD student and has been rewritten as part of an RSE internship. The new implementation uses a Dash-based architecture with SQLite for efficient data storage and retrieval.
 
-* Python 3.7. Specifically for Windows 64bit version
-* Python packages:
-  * Flask 
-  * python-dotenev
-  * dash
-  * plotly
-  * psutil
-  * pandas
+## Features
 
-# 3. Installation 
+### Gene Explorer
+- **Gene Visualization**: 
+  - Visualize multiple genes simultaneously across different datasets
+  - Multiple plot types (Swarm, Violin, Box plots)
+  - Configurable x-axis variables (Gene, NHU, Tissue, Gender, etc.)
+  - TER (Transepithelial Electrical Resistance) threshold filtering
+  - Real-time plot updates and interactive filtering
 
-1. Download the .tsv data from wherever it is stored (at the writting of this, was stored on Google Drive)
-2. Download the latest version of [Python 3.7](https://www.python.org/downloads/). This should also install *pip command* if not you'll need to download it and install it [oficial documentation](https://pip.pypa.io/en/stable/installing/).
-3. From the command prompt/terminal, go to the root folder of the project and run the following `pip install -r requirements.tx`. This will install all the python dependencies 
-4. After everything is installed:
-   1. Linux/Mac: `python wsgi.py`
-   2. Windows: double click `wsgi.py`
+- **Gene Comparison**:
+  - Compare two genes with correlation analysis
+  - Regression line visualization
+  - Multiple correlation metrics and statistical analysis
 
-## 3.1. Adding a new dataset
+### Additional Features
+- **Genome Browser**: Proof of concept (work in progress)
+- **Containerized Deployment**: Docker and Docker Compose support
+- **Dependabot Setup**: Keeps dependencies up to date
 
-At the moment of writing there are 11 .tsv files, stored in `/data` folder and can be split in a few categories:
-* A metadata file,
-* A master .tsv file, which acts like a record file to keep track of the datasets used. It's also used to create an all data file: "all_data.tsv"
-*  A all_data.tsv file
-*  Rest of the 8 .tsv files are various datasets that hold the TPM values for each of the sample.
+## Architecture
 
-When a new dataset is added:
-1. Download the new .tsv file to `/data`
-2. Update the master.tsv with the name of the new .tsv
-3. Run the the Python function `update_all_datasets("data/"`. This will update all_data.tsv file with the new TPMs / Samples
+```
+urotheliome-dash/
+├── DashApp/                     # Main web application
+│   ├── app.py                   # Application entry point
+│   ├── assets/                  # CSS styles and images
+│   ├── callbacks/               # UI interaction callbacks
+│   ├── components/              # Reusable UI components
+│   ├── data/                    # Data fetching utilities
+│   ├── db/                      # Database connection utilities
+│   └── layouts/                 # Page layouts and navigation
+├── db-generation/               
+│   ├── import_data.ipynb        # Jupyter notebook for database creation
+│   └── schema.sql               # SQLite database schema
+├── JBU_data/                    # Source data files
+├── docker-compose.yml           # Docker Compose configuration
+├── Dockerfile                   # Container build instructions
+└── README.md                    # This file
+```
 
-# 4. Features
+## Technology Stack
 
-* Do an exact search on the gene entered and plot the TPMs value 
-* When one dataset is select, it plots the shared number column values
-* Change the x-axis select between: Sample, shared_num_same_col, Tissue, Dataset,NHU_differentiation, Gender, TER, Substrate
-* Filter out the loose TER barrier 
-* Export the plot to PDF and that data to .CSV
-* Select different type of figure plots: Swarm, violin, violin and points, box, box and points
-* Choose between linear and log10 axis 
+- **Backend**: Python, Dash, SQLite
+- **Frontend**: Dash components, Plotly.js, Bootstrap components
+- **Database**: SQLite with indexed gene expression data
+- **Deployment**: Docker Compose, Apache (with SSL)
+- **Infrastructure**: University VM with Puppet configuration
 
-# 5. Wishlist 
+## Prerequisites
 
-Below are features to be implemented: 
+- Docker and Docker Compose
+- Python 3.12+ (for local development)
+- Jupyter Notebook (for database generation)
 
-* mann whitney, dataset pairwise comparison
+## Database Setup
 
-# 6. Notes on implementation
+The application requires a SQLite database containing gene expression data and metadata.
 
-## 6.1. Technologies 
-The application is build on [Dash](https://plotly.com/dash/) which is the client-server solution for the interactive plotting library [Plotly](https://plotly.com/). Esentially, Dash is a wrapper arround the [Flask](https://flask.palletsprojects.com/en/1.1.x/) micro-server framework (if you are familiar with Node.js, it's similar to Restify). This means that on top of the Plotly graphing tools we can now create a GUI on a web-browser. See the [documentation](https://dash.plotly.com/layout) on Dash about how to add elements (it's actually good).
+1. **Generate Database**:
+   ```bash
+   cd db-generation/
+   jupyter notebook import_data.ipynb
+   ```
+   
+2. **Run All Cells** in the notebook to create `UrotheliomeData.db`
 
-## 6.2. Why Flask + Dash
-Even though Dash is a wrapper around a Flask (i.e. that a Flask server is started with a Dash app) and there is not an explicit need to run the Flask, we do that. The reason for this is that we initially wanted to integrate the tool in Google Cloud Service (more on this Cloud section) and we needed a little bit more freedom than the Dash let us. 
+3. **Set Environment Variable**:
+   ```bash
+   export DATABASE_PATH=/path/to/UrotheliomeData.db
+   ```
 
-## 6.3. Architecture 
-I have followed [this tutorial](https://hackersandslackers.com/plotly-dash-with-flask/) on how to do the integration. You don't need to follow the blog if you don't want to get the details, the important points are below:
-* The `wsgi.py` does the initialisation and starts the server. This includes running the init function from the root folder. 
-* The init script runs the flask server with the configuration from `config.py` that tells flask where to look for the resources (e.g. CSS files, html, images etc.). Also, it starts the Dash app
-* The `/plotlyflask` folder contains all the code to make the visualisation tool to work.
-* From an UI persepctive the tool is divided in the following: Gene search field, Dataset panel, Metadata panel, figure and export panel. The panels are constructing in each of their function and can be modified independently of the other elements.
-* All the interactiactions with the html elements (i.e. button pressing, ticking etc.) are handled in init_callbacks function. Note, this is a workaround of the normal Dash implementation with Flask, normally you wouldn't have the callbacks inside a function, but outside and the dash app object global. 
-* When there is nothing to plot, for situations when the gene is not found or at the start of the tool we return to the figure output `{ "data" : {} }`. The reason for this is that the plotly figures are dictionaries and we just return a figure with no data. This helps to deal with the cases when we want to manipulate the figure, like exporting. 
-* **Importantly!** As we want the columns with _incl values as datasets (this means that we need to find the samples that have that column value = "Y"), we simply duplicate the samples and added to the original data. This involved to duplicate both the samples in metadata and in the `all_data.tsv`. We've marked the samples that are duplicated by the following rule "_incl_" + "including column initials". 
-  * When we export the data to .csv we removed the duplicated samples 
-* The two plotting functions are very similar and probably can be abastrated further, but we wanted to keep seperately when we extend the functionality for the metadata panel
-* The `viz_tools/` folder was intended to integrate some of the functionality from the BU clustering project to this one, but we haven't actually completed that. Moreover, not sure if it's required, but left the files just in case that will be needed. 
+## Local Development
 
-## 6.4. Tips
+1. **Clone Repository**:
+   ```bash
+   git clone <repository-url>
+   cd urotheliome-dash
+   ```
 
-* If you create a new file and need access to the flask app, simply import `from flask import current_app as app`
-* An html element value can be se only by one callback (i.e. Output on the dash_app decorators) 
+2. **Set Database Path**:
+   ```bash
+   export DATABASE_PATH=/path/to/UrotheliomeData.db
+   ```
 
+3. **Run with Docker Compose**:
+   ```bash
+   docker compose up -d
+   ```
 
-# 7. (Google) Cloud integration
+4. **Access Application**:
+   Open browser to `http://localhost:8050`
 
-Below are some of my notes from when I've tried to integrate the visualisation tool with Google Cloud. Some of them may be a bit outadate so it's better to consult the Google's oficial documentation. Also, the git repo's history may be useful. We've used the following services (which you need to set up first on your Google Cloud Project -GCP-):
-* Google App Engine
-* Google Storage Cloud
-* Google Drive API
-* Google Sign-in
+## Production Deployment
 
-At the begining of the project we've tried to create the tool directly on the Google Cloud. We aimed to that with the following constraints: efficient, fast, very cheap (close to free), secure. Unfortunatelly, we couldn't find a solution that satisfed all of these in the given time framed. 
+The application is managed by Puppet and deployed on a University of York VM with the following configuration:
 
-We have tried to host the server on serverless solution called Google App Engine which basically runs a script when a request to its instance address is called. The server won't be always on and will restart automatically if needed. Some important aspects about Google App Engine
-* The default resources alocated are small, for example you have a few MBs for RAM and the CPU is in the range of MHz. This worked fine for our current data but it may represented an issue in the feature 
-* The data can't be stored and if so it will be temporary on the RAM which is not very large.
-  * To solve this we have integrated Google Storage Cloud which is used to store data. As this is another google service has the potential to add extra costs. 
-  * The initial plan was to host the data on Google Drive and move it to Google Storage Cloud. We have chosen this, as there is an API for both Google Services and the Google Drive is known by all the university members.
-  * We've also tried to stream directly a .tsv files directly to a DataFrame which is possible as the `pd.read_csv` receives either a filepath or a StringIO. The google drive API returns a BufferIO which can be converted to StringIO.  <-- This may be relevant for future 
-* Google Sign-in, Google drive authorisation integration - we needed to do this in order to insure security.
+- **Server**: University VM - `urotheliome.york.ac.uk`
+- **Web Server**: Apache with SSL certificates
+- **Puppet Manifest**: `urotheliomen` branch of `sys-puppet-control-its` repository
+- **Apache Module**: `its_apache` module for vhost and SSL configuration
 
-Google Drive API it's very easy to use but the documentation is poor in `g_drive/quickstart.py` is the integration of some basic api calls like:
-* authorise the google drive
-* getting a folder_id of a shared folder from Google Drive
-* get the files from a folder_id
-* save those files
+## Data Flow
 
-In the `g_drive/main.py` there are some additional features such as:
-* integration with Google Storage Cloud for:
-  * uploading data
-  * get the files from the buckets
+1. **User Input**: Gene selection, plot parameters, dataset filters
+2. **Data Retrieval**: SQL queries to indexed SQLite database
+3. **Processing**: Data transformation and aggregation
+4. **Visualization**: Dynamic plot generation with Plotly
+
+## Database Schema
+
+The SQLite database contains the following key tables:
+
+- `Gene`: Gene names and identifiers
+- `Sample`: Sample metadata (tissue, gender, treatment, etc.)
+- `GeneExpression`: TPM values linking genes to samples
+- `Dataset`: Dataset names
+
+## Usage
+
+1. **Select Genes**: Choose genes of interest from the dropdown
+2. **Configure X-axis**: Select grouping variable (Dataset, Tissue, Gender, etc.)
+3. **Choose Plot Type**: Select visualization method (Swarm, Violin, Box)
+4. **Filter Datasets**: Select specific datasets for comparison
+5. **View Results**: Interactive plots update automatically
+
+## Environment Variables
+
+- `DATABASE_PATH`: Path to SQLite database file (required)
+
+## Acknowledgments
+
+- [Original project repository](https://github.com/vladUng/visualisation)
+- Data sources: JBU research group
+
+---
+
+**Note**: The original project documentation has been preserved in `README - old.md` for reference. 

@@ -130,6 +130,7 @@ dmypy.json
 
 # Database
 *.db
+*.sql
 
 # Project specific folders
 keys/
@@ -148,3 +149,4 @@ DashApp/venv*/
 DashApp/.cursorignore
 requirementsBackUp.txt
 *.js
+*.txt
