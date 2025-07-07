@@ -74,7 +74,7 @@ urotheliome-dash/
 
 ## Database Setup
 
-The application requires a SQLite database containing gene expression data and metadata.
+The application requires a SQLite database containing gene expression data and metadata. The .db file is mounted as a volume inside docker compose and then the path (from inside the container) is set as an env variable.
 
 1. **Generate Database**:
    ```bash
@@ -84,7 +84,9 @@ The application requires a SQLite database containing gene expression data and m
    
 2. **Run All Cells** in the notebook to create `UrotheliomeData.db`
 
-3. **Set Environment Variable**:
+3. **Modify Docker Compose Volume Mount** to mount the correct folder from outisde the container
+
+4. **Set Environment Variable**, this has to be the path to the database inside the docker container:
    ```bash
    export DATABASE_PATH=/path/to/UrotheliomeData.db
    ```
