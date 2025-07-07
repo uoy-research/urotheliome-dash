@@ -1,6 +1,6 @@
 # Urotheliome Gene Expression Dashboard
 
-Interactive web application for visualizing JBU gene expression data, built with Dash and SQLite. This project provides researchers with tools to explore gene expression patterns across multiple datasets.
+Interactive web application for visualizing JBU gene expression data, built with Dash and SQLite. This project provides researchers with tools to explore gene expression patterns across multiple datasets. Dataset information can be found [here](https://docs.google.com/document/d/1yJYfFn6kdUS2KAp1tuGDLEzuR2hsscdESQTpLCxH1wU).
 
 ## Live Application
 
@@ -29,6 +29,13 @@ This project was originally started by a PhD student and has been rewritten as p
 - **Genome Browser**: Proof of concept (work in progress)
 - **Containerized Deployment**: Docker and Docker Compose support
 - **Dependabot Setup**: Keeps dependencies up to date
+- **Accessibility**: Fully compliant with the Web Content Accessibility Guidelines (WCAG) version 2.2 AA standard.
+
+## Outstanding Features
+
+- **Ability to export plot data**
+- **Ability to add and process new datasets**
+
 
 ## Architecture
 
