@@ -107,7 +107,7 @@ def gene_dashboard_layout() -> html.Div:
     dataset_control = [
         html.Label("Select Datasets", htmlFor="dataset-radio", className="fw-bold"),
         dataset_radio(),
-        dcc.Link("Dataset Information", href="https://docs.google.com/document/d/1yJYfFn6kdUS2KAp1tuGDLEzuR2hsscdESQTpLCxH1wU", target="_blank", className="small text-muted")
+        # dcc.Link("Dataset Information", href="https://docs.google.com/document/d/1yJYfFn6kdUS2KAp1tuGDLEzuR2hsscdESQTpLCxH1wU", target="_blank", className="small text-muted")
     ]
 
     return html.Div([
