@@ -54,6 +54,6 @@ register_layout_callbacks(app)  # For page routing
 register_navbar_callbacks(app)  # For navbar toggle on mobile
 register_callbacks(app)         # For gene visualization
 
-# Run the app
+# Run the app (for development only)
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=80, debug=False)
+    app.run(host='0.0.0.0', port=8080, debug=True)
