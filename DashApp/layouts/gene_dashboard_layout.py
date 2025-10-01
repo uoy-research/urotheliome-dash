@@ -58,11 +58,11 @@ def gene_dashboard_layout() -> html.Div:
         dbc.RadioItems(
             id="plot-type-radio",
             options=[
-                {"label": "Scatter", "value": "strip"},
+                {"label":"Box", "value": "box"},
+                {"label": "Points", "value": "strip"},
                 {"label": "Violin", "value": "violin"},
-                {"label": "Box", "value": "box"}
             ],
-            value="strip",
+            value="box",
             inline=True,
             className="mb-2 small"
         )

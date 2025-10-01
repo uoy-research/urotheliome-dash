@@ -5,7 +5,7 @@ from data.fetch_names import fetch_gene_names
 
 def gene_dropdown():
     gene_names = fetch_gene_names()  # Fetch the gene names from the database
-    return dmc.MultiSelect(
+    return dmc.Select(
         id="gene-dropdown",
         data=[{"label": gene, "value": gene} for gene in gene_names],
         searchable=True,
@@ -16,12 +16,12 @@ def gene_dropdown():
 
 def xaxis_dropdown():
     options = [
+        {"label": "Dataset Subset", "value": "SubsetName"},
         {"label": "Gene Name", "value": "GeneName"},
         {"label": "NHU", "value": "NhuDifferentiation"},
         {"label": "Tissue", "value": "TissueName"},
         {"label": "Gender", "value": "Gender"},
         {"label": "Substrate", "value": "SubstrateType"},
-        {"label": "Dataset Subset", "value": "SubsetName"},
         {"label": "Tumor Stage", "value": "Stage"},
         {"label": "Vital Status", "value": "Status"},
         {"label": "Sample ID", "value": "SampleId"},
@@ -30,7 +30,7 @@ def xaxis_dropdown():
     return dmc.Select(
         id="xaxis-dropdown",
         data=options,
-        value="GeneName",
+        value="SubsetName",
         clearable=False,
         placeholder="Select X-axis...",
     )
