@@ -16,12 +16,12 @@ def gene_dropdown():
 
 def xaxis_dropdown():
     options = [
-        {"label": "Dataset Subset", "value": "SubsetName"},
         {"label": "Gene Name", "value": "GeneName"},
         {"label": "NHU", "value": "NhuDifferentiation"},
         {"label": "Tissue", "value": "TissueName"},
         {"label": "Gender", "value": "Gender"},
         {"label": "Substrate", "value": "SubstrateType"},
+        {"label": "Dataset Subset", "value": "SubsetName"},
         {"label": "Tumor Stage", "value": "Stage"},
         {"label": "Vital Status", "value": "Status"},
         {"label": "Sample ID", "value": "SampleId"},
