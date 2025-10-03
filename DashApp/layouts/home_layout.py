@@ -15,15 +15,16 @@ def home_layout() -> html.Div:
         dbc.CardBody([
             html.H3("About", className="card-title text-primary"),
             html.P(
-                "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod "
-                "tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim "
-                "veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea "
-                "commodo consequat. Duis aute irure dolor in reprehenderit in"
-                "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod "
-                "tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim "
-                "veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea "
-                "commodo consequat. Duis aute irure dolor in reprehenderit in",
-                className="card-text"
+                "All somatic cells in our body contain the same DNA, with approximately 20,000 different genes providing the instructions (transcripts) for making proteins. Our cells become specialised by controlling which of those genes are “on” or “off”, and how much transcript “on” genes can produce. Each cell type therefore has a specific “transcriptomic profile” which can be observed, measured and manipulated to understand its regulation, plasticity and potential. Crucially for research into cancers (and other diseases), we can compare the profile of normal cells to cancers to understand what has gone wrong, and to identify particular processes which could be targeted therapeutically.",
+                className="card-text-1"
+            ),
+            html.P(
+                "The Jack Birch Unit for Molecular Carcinogenesis began to profile the urothelial (bladder and ureter) transcriptomes in the early 2000s. This was accelerated through The Astellas European Foundation Prize in Urology awarded to Professor Jennifer Southgate and Dr Simon Baker in 2010 with the aim of deriving \"The Urotheliome\" - a high resolution transcriptomic map of urothelial differentation and plasticity. We have now developed datasets of urothelial differentiation, stimulations by particular gene regulators and drugs, characterised bladder cancer cell lines, and developed specific transcriptomic signatures of immune activation, viral infection and metabolic dysregulation. These datasets are all interrogated with reference to international bladder cancer cohorts, such as The Cancer Genome Atlas (TCGA) and UROMOL consortia. By working with normal data we are also able to understand which genes are transcribed in urothelium, and which transcripts correspond to immune and muscle contamination of tumours.",
+                className="card-text-2"
+            ),
+            html.P(
+                "We have now amassed a large database of RNA sequencing data from hundreds of patients and experimental conditions. This website is a visualisation tool for these data, which has been developed for the academic community to facilitate urothelial research, collaboration, and advancement of FAIR principles in the life sciences. Please contact Dr Andrew Mason (Lecturer in Cancer Informatics within the Jack Birch Unit) to discuss bioinformatic analysis beyond visualisation, including opportunities for new collaborations.",
+                className="card-text-3"
             ),
         ]),
         className="mb-4 shadow-sm"
