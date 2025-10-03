@@ -118,7 +118,7 @@ def register_callbacks(app) -> None:
         state=[State("gene-expression-plot", "figure")],
         prevent_initial_call=True,
     )
-    def update_plot(selected_genes: list, selected_datasets: list, x_axis: str, plot_type: str, 
+    def update_plot(selected_genes: str, selected_datasets: list, x_axis: str, plot_type: str, 
                    active_tab: str, ter_threshold: int, current_figure: Dict[str, Any]) -> Tuple[Dict[str, Any], str, str, bool]:
         ctx = callback_context
         if not ctx.triggered or active_tab != "gene-visualization" and ctx.triggered[0]['prop_id'].split('.')[0] != "tabs":
@@ -140,7 +140,7 @@ def register_callbacks(app) -> None:
             
         try:
             # Fetch data
-            data = fetch_gene_expression_data(tuple(selected_genes), tuple(selected_datasets))
+            data = fetch_gene_expression_data((selected_genes,), tuple(selected_datasets))
             
             if data.empty:
                 return {}, "", html.Strong("No data available for the selected combination"), True
@@ -183,7 +183,7 @@ def register_callbacks(app) -> None:
                                hover_data=hover_cols)
             
             # Update layout
-            plot_title = f"Expression of {', '.join(selected_genes)} by {x_axis}"
+            plot_title = f"Expression of {(selected_genes)} by {x_axis}"
             if ter_threshold > 0:
                 plot_title += f" (TER > {ter_threshold})"
                 
