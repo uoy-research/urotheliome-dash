@@ -95,7 +95,8 @@ def register_callbacks(app) -> None:
                 gridcolor='rgba(0,0,0,0.05)',
                 gridwidth=1,
                 linecolor='rgba(0,0,0,0.2)',
-                linewidth=1
+                linewidth=1,
+                range=[0, None]
             )
         
         return fig
@@ -361,7 +362,7 @@ def register_callbacks(app) -> None:
             )
             
             # Add reference line (y=x)
-            fig.add_trace(
+            """ fig.add_trace(
                 go.Scatter(
                     x=[0, max_val],
                     y=[0, max_val],
@@ -369,7 +370,7 @@ def register_callbacks(app) -> None:
                     line=dict(color='rgba(0,0,0,0.5)', dash='dash', width=2),
                     name='1:1 Line (y=x)'
                 )
-            )
+            ) """
             
             # Add regression line if there are enough data points
             if len(merged_data) > 1:
