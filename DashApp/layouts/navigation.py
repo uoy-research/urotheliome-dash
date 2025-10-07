@@ -37,7 +37,8 @@ def create_navbar():
                         [
                             dbc.NavItem(dbc.NavLink("Home", href="/", active="exact")),
                             dbc.NavItem(dbc.NavLink("Gene Explorer", href="/gene-explorer", active="exact")),
-                            dbc.NavItem(dbc.NavLink("Genome Browser", href="/genome-browser", active="exact"))
+                            dbc.NavItem(dbc.NavLink("Genome Browser", href="/genome-browser", active="exact")),
+                            dbc.NavItem(dbc.NavLink("Login", href="/login", active="exact"))
                         ],
                         className="ms-auto",
                         navbar=True
