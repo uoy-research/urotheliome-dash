@@ -26,6 +26,20 @@ app = dash.Dash(
 )
 
 # Setup SSO
+# TODO where should this go, and is it sensitive?
+# General Shibboleth
+SSO_ATTRIBUTE_MAP = {
+    "HTTP_SHIB_IDENTITY_PROVIDER": (True, "idp"),
+    "HTTP_SHIB_SHARED_TOKEN": (True, "shared_token"),
+    "HTTP_SHIB_CN": (True, "cn"),
+    "HTTP_SHIB_MAIL": (True, "email"),
+    "HTTP_SHIB_GIVENNAME": (False, "first_name"),
+    "HTTP_SHIB_SN": (False, "last_name"),
+}
+server.config['SSO_LOGIN_URL'] = ""
+server.config['SSO_LOGIN_ENDPOINT'] = ""
+server.config['SSO_ATTRIBUTE_MAP'] = SSO_ATTRIBUTE_MAP
+
 ext = SSO(app=server)
 
 # TODO Where should routes live?
@@ -34,19 +48,6 @@ def login():
     if 'user' in session:
         return 'Welcome {name}'.format(name=session['user']['nickname'])
     return redirect(server.config['SSO_LOGIN_URL'])
-
-# TODO where should this go, and is it sensitive?
-#: Default attribute map
-SSO_ATTRIBUTE_MAP = {
-    'ADFS_AUTHLEVEL': (False, 'authlevel'),
-    'ADFS_GROUP': (True, 'group'),
-    'ADFS_LOGIN': (True, 'nickname'),
-    'ADFS_ROLE': (False, 'role'),
-    'ADFS_EMAIL': (True, 'email'),
-    'ADFS_IDENTITYCLASS': (False, 'external'),
-    'HTTP_SHIB_AUTHENTICATION_METHOD': (False, 'authmethod'),
-}
-server.config['SSO_ATTRIBUTE_MAP'] = SSO_ATTRIBUTE_MAP
 
 # TODO where should this go?!
 @ext.login_handler
