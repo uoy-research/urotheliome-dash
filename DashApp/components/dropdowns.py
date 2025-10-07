@@ -9,7 +9,7 @@ def gene_dropdown():
         id="gene-dropdown",
         data=[{"label": gene, "value": gene} for gene in gene_names],
         searchable=True,
-        limit=50,
+        #limit=50,
         placeholder="Select genes...",
         clearable=True,
     )
@@ -56,3 +56,17 @@ def gene_comparison_dropdown_2():
         placeholder="Select second gene...",
         clearable=True,
     )
+
+""" def ter_dropdown():
+    options = [
+        {"label": "All values", "value": "0"},
+        {"label": "tight barrier >= 500Ω.cm^2", "value": "500"},
+        {"label": "tight barrier >= 1000Ω.cm^2", "value": "1000"},
+    ]
+    return dmc.Select(
+        id="ter-input",
+        data=options,
+        #value="SubsetName",
+        clearable=False,
+        placeholder="Select TER threshold...",
+    ) """

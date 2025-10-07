@@ -1,5 +1,6 @@
 from dash import dcc, html
 import dash_bootstrap_components as dbc
+import dash_mantine_components as dmc
 from data.fetch_names import fetch_datasets
 
 def dataset_radio():
@@ -36,4 +37,19 @@ def dataset_radio():
                 size="sm"
             )
         ], className="mb-3")
+    ])
+
+def ter_radio():
+
+    return html.Div([
+        # TER radio buttons
+        dbc.RadioItems(
+            options=[
+                {"label": "All values", "value": 0},
+                {"label": "tight barrier >= 500Ω.cm^2", "value": 500},
+                {"label": "tight barrier >= 1000Ω.cm^2", "value": 1000},
+            ],
+            value=0,
+            id="ter-input",
+        ),
     ])

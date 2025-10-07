@@ -21,7 +21,7 @@ def register_callbacks(app) -> None:
         # Handle None value when the input is empty
         if value is None:
             value = 0
-        return f"TER > {value}"
+        return f"TER >= {value}"
     
     @app.callback(
         Output("dataset-radio", "value"),
