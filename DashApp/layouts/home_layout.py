@@ -42,11 +42,11 @@ def home_layout() -> html.Div:
                 ]),
                 dbc.ListGroupItem([
                     html.Strong("2. Select genes of interest: "),
-                    "Use the searchable dropdown menu to select the gene(s) you wish to analyze."
+                    "Use the searchable dropdown menu to select the gene you wish to analyze."
                 ]),
                 dbc.ListGroupItem([
                     html.Strong("3. Choose visualization options: "),
-                    "Select the desired plot type (scatter, violin, or box) and axis variables."
+                    "Select the desired plot type (box, points, or violin) and axis variables."
                 ]),
                 dbc.ListGroupItem([
                     html.Strong("4. Compare specific genes: "),
