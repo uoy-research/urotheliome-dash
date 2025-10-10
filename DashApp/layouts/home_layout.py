@@ -14,6 +14,7 @@ def home_layout() -> html.Div:
     mission_section = dbc.Card(
         dbc.CardBody([
             html.H3("About", className="card-title text-primary"),
+            html.Img(src="/assets/Images/labelled-urinary-tract-wb.jpg", className="img-fluid", style={"display": "block", "margin": "auto","max-width": "40%","background-color": "gray", "padding": "0px"}, alt="Labelled scientific diagram of the urinary tract, showing the kidneys, ureter, bladder, and urethra, locations of cancer, and images of healthy urothelia"),
             html.P(
                 "All somatic cells in our body contain the same DNA, with approximately 20,000 different genes providing the instructions (transcripts) for making proteins. Our cells become specialised by controlling which of those genes are “on” or “off”, and how much transcript “on” genes can produce. Each cell type therefore has a specific “transcriptomic profile” which can be observed, measured and manipulated to understand its regulation, plasticity and potential. Crucially for research into cancers (and other diseases), we can compare the profile of normal cells to cancers to understand what has gone wrong, and to identify particular processes which could be targeted therapeutically.",
                 className="card-text-1"
