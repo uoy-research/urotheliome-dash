@@ -1,7 +1,7 @@
 from dash import html, dcc
 import dash_bootstrap_components as dbc
-from components.dropdowns import gene_dropdown, xaxis_dropdown, gene_comparison_dropdown_1, gene_comparison_dropdown_2
-from components.radio_buttons import dataset_radio
+from components.dropdowns import gene_dropdown, xaxis_dropdown, gene_comparison_dropdown_1, gene_comparison_dropdown_2 #, ter_dropdown
+from components.radio_buttons import dataset_radio, ter_radio
 from components.plots import gene_expression_plot, gene_comparison_plot
 
 def create_control_section(title, controls):
@@ -85,21 +85,14 @@ def gene_dashboard_layout() -> html.Div:
         html.Div([
             dbc.Row([
                 dbc.Col([
-                    dbc.Input(
-                        id="ter-input",
-                        type="number",
-                        min=0,
-                        step=0.01,
-                        value=0,
-                        placeholder="Enter TER threshold",
-                        className="mb-2"
-                    )
+                    #ter_dropdown()
+                    ter_radio()
                 ], width=10),
                 dbc.Col([
                     html.Div(id="ter-value-display", className="small text-muted text-center")
                 ], width=2)
             ]),
-            html.Small("Only show samples with TER values above this threshold", className="text-muted")
+            html.Small("Only show samples with TER values equal to or above this threshold", className="text-muted")
         ], className="mt-2 mb-3")
     ]
 
@@ -181,11 +174,11 @@ def gene_dashboard_layout() -> html.Div:
             create_control_section(
                 "Global Controls",
                 [
-                    # TER Slider
-                    *ter_control,
-                    html.Hr(),
                     # Dataset selection
-                    *dataset_control
+                    *dataset_control,
+                    html.Hr(),
+                    # TER Slider
+                    *ter_control
                 ]
             )
         ], style=container_style),

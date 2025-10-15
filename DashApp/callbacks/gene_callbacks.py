@@ -21,7 +21,7 @@ def register_callbacks(app) -> None:
         # Handle None value when the input is empty
         if value is None:
             value = 0
-        return f"TER > {value}"
+        return f"TER >= {value}"
     
     @app.callback(
         Output("dataset-radio", "value"),
@@ -89,6 +89,7 @@ def register_callbacks(app) -> None:
             height=600,
             margin=dict(l=50, r=50, t=80, b=50)
         )
+        fig.update_yaxes(rangemode="tozero")
         
         for axis in [fig.update_xaxes, fig.update_yaxes]:
             axis(
@@ -360,17 +361,6 @@ def register_callbacks(app) -> None:
                 merged_data[f'{gene2}_TPM'].max()
             )
             
-            # Add reference line (y=x)
-            fig.add_trace(
-                go.Scatter(
-                    x=[0, max_val],
-                    y=[0, max_val],
-                    mode='lines',
-                    line=dict(color='rgba(0,0,0,0.5)', dash='dash', width=2),
-                    name='1:1 Line (y=x)'
-                )
-            )
-            
             # Add regression line if there are enough data points
             if len(merged_data) > 1:
                 x_values = merged_data[f'{gene1}_TPM'].values
@@ -384,10 +374,10 @@ def register_callbacks(app) -> None:
                 
                 # Calculate Spearman correlation
                 spearman_corr, spearman_p = stats.spearmanr(x_values, y_values)
-                
-                # Calculate Pearson correlation for log10(TPM+1)
-                log_x = np.log10(x_values + 1)
-                log_y = np.log10(y_values + 1)
+
+                # Calculate Pearson correlation for log2(TPM+1)
+                log_x = np.log2(x_values + 1)
+                log_y = np.log2(y_values + 1)
                 pearson_corr_log, p_value_log = stats.pearsonr(log_x, log_y)
                 
                 # Standard regression line calculation
@@ -411,7 +401,7 @@ def register_callbacks(app) -> None:
                 # Create a string with all correlation information
                 correlation_text = (
                     f"Pearson: {pearson_corr:.3f}, "
-                    f"Pearson log10(TPM+1): {pearson_corr_log:.3f}, "
+                    f"Pearson log2(TPM+1): {pearson_corr_log:.3f}, "
                     f"Spearman: {spearman_corr:.3f}"
                 )
                 

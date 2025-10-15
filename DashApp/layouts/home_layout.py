@@ -14,16 +14,20 @@ def home_layout() -> html.Div:
     mission_section = dbc.Card(
         dbc.CardBody([
             html.H3("About", className="card-title text-primary"),
+            html.Img(src="/assets/Images/labelled-urinary-tract-wb.jpg", className="img-fluid", style={"display": "block", "margin": "auto","max-width": "40%","background-color": "gray", "padding": "0px"}, alt="Labelled scientific diagram of the urinary tract, showing the kidneys, ureter, bladder, and urethra, locations of cancer, and images of healthy urothelia"),
+            html.P(),
             html.P(
-                "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod "
-                "tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim "
-                "veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea "
-                "commodo consequat. Duis aute irure dolor in reprehenderit in"
-                "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod "
-                "tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim "
-                "veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea "
-                "commodo consequat. Duis aute irure dolor in reprehenderit in",
-                className="card-text"
+
+                "All somatic cells in our body contain the same DNA, with approximately 20,000 different genes providing the instructions (transcripts) for making proteins. Our cells become specialised by controlling which of those genes are “on” or “off”, and how much transcript “on” genes can produce. Each cell type therefore has a specific “transcriptomic profile” which can be observed, measured and manipulated to understand its regulation, plasticity and potential. Crucially for research into cancers (and other diseases), we can compare the profile of normal cells to cancers to understand what has gone wrong, and to identify particular processes which could be targeted therapeutically.",
+                className="card-text-1"
+            ),
+            html.P(
+                ["The ", dbc.CardLink("Jack Birch Unit for Molecular Carcinogenesis", href="https://www.york.ac.uk/biology/research/jack-birch-unit/"), " began to profile the urothelial (bladder and ureter) transcriptomes in the early 2000s. This was accelerated through The Astellas European Foundation Prize in Urology awarded to Professor Jennifer Southgate and Dr Simon Baker in 2010 with the aim of deriving \"The Urotheliome\" - a high resolution transcriptomic map of urothelial differentation and plasticity. We have now developed datasets of urothelial differentiation, stimulations by particular gene regulators and drugs, characterised bladder cancer cell lines, and developed specific transcriptomic signatures of immune activation, viral infection and metabolic dysregulation. These datasets are all interrogated with reference to international bladder cancer cohorts, such as The Cancer Genome Atlas (TCGA) and UROMOL consortia. By working with normal data we are also able to understand which genes are transcribed in urothelium, and which transcripts correspond to immune and muscle contamination of tumours."],
+                className="card-text-2"
+            ),
+            html.P(
+                "We have now amassed a large database of RNA sequencing data from hundreds of patients and experimental conditions. This website is a visualisation tool for these data, which has been developed for the academic community to facilitate urothelial research, collaboration, and advancement of FAIR principles in the life sciences. Please contact Dr Andrew Mason (Lecturer in Cancer Informatics within the Jack Birch Unit) to discuss bioinformatic analysis beyond visualisation, including opportunities for new collaborations.",
+                className="card-text-3"
             ),
         ]),
         className="mb-4 shadow-sm"
@@ -41,11 +45,11 @@ def home_layout() -> html.Div:
                 ]),
                 dbc.ListGroupItem([
                     html.Strong("2. Select genes of interest: "),
-                    "Use the searchable dropdown menu to select the gene(s) you wish to analyze."
+                    "Use the searchable dropdown menu to select the gene you wish to analyze."
                 ]),
                 dbc.ListGroupItem([
                     html.Strong("3. Choose visualization options: "),
-                    "Select the desired plot type (scatter, violin, or box) and axis variables."
+                    "Select the desired plot type (box, points, or violin) and axis variables."
                 ]),
                 dbc.ListGroupItem([
                     html.Strong("4. Compare specific genes: "),
@@ -59,21 +63,21 @@ def home_layout() -> html.Div:
     # Logo section - now positioned at the bottom with alternating heights
     partners_heading = html.H3("Supported by", className="text-primary text-center mt-5 mb-5")
     
-    # Top row with 2 logos (taller)
+    # Top row with 1 logo (taller)
     logo_row_top = dbc.Row([
-        dbc.Col(html.Img(src="/assets/Logos/york-biology-logo.jpg", className="img-fluid", style={"height": "120px"}, alt="University of York Biology Department logo"), 
-                width="auto", className="text-center mx-5 px-4"),
-        dbc.Col(html.Img(src="/assets/Logos/ukri-bbsrc-square-logo.png", className="img-fluid", style={"height": "120px"}, alt="UKRI BBSRC funding logo"), 
-                width="auto", className="text-center mx-5 px-4"),
+        dbc.Col(html.Img(src="/assets/Logos/YAC-logo-long.png", className="img-fluid", style={"height": "110px", "padding": "10px"}, alt="York Against Cancer logo"), 
+                width="auto", className="text-center mx-5"),   
     ], justify="center", align="center", className="mb-4")
     
-    # Bottom row with 3 logos (shorter)
+    # Bottom row with 4 logos (shorter)
     logo_row_bottom = dbc.Row([
-        dbc.Col(html.Img(src="/assets/Logos/ybri-white-logo.png", className="img-fluid", style={"height": "90px", "background-color": "gray", "padding": "10px"}, alt="York Biomedical Research Institute logo"), 
+        dbc.Col(html.Img(src="/assets/Logos/ybri-white-logo.png", className="img-fluid", style={"height": "70px", "background-color": "gray", "padding": "0px"}, alt="York Biomedical Research Institute logo"), 
                 width="auto", className="text-center mx-5"),
-        dbc.Col(html.Img(src="/assets/Logos/YAC-logo-long.png", className="img-fluid", style={"height": "90px", "padding": "10px"}, alt="York Against Cancer logo"), 
-                width="auto", className="text-center mx-5"),
-        dbc.Col(html.Img(src="/assets/Logos/Astellas-logo.svg", className="img-fluid", style={"height": "90px", "padding": "10px"}, alt="Astellas Pharma logo"), 
+        dbc.Col(html.Img(src="/assets/Logos/york-biology-logo.jpg", className="img-fluid", style={"height": "70px"}, alt="University of York Biology Department logo"), 
+                width="auto", className="text-center mx-5 px-4"),
+        dbc.Col(html.Img(src="/assets/Logos/ukri-bbsrc-square-logo.png", className="img-fluid", style={"height": "70px"}, alt="UKRI BBSRC funding logo"), 
+                width="auto", className="text-center mx-5 px-4"),
+        dbc.Col(html.Img(src="/assets/Logos/Astellas-logo.svg", className="img-fluid", style={"height": "70px", "padding": "0px"}, alt="Astellas Pharma logo"), 
                 width="auto", className="text-center mx-5"),
     ], justify="center", align="center", className="mb-5")
     
