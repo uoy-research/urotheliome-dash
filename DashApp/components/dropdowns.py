@@ -56,17 +56,3 @@ def gene_comparison_dropdown_2():
         placeholder="Select second gene...",
         clearable=True,
     )
-
-""" def ter_dropdown():
-    options = [
-        {"label": "All values", "value": "0"},
-        {"label": "tight barrier >= 500Ω.cm^2", "value": "500"},
-        {"label": "tight barrier >= 1000Ω.cm^2", "value": "1000"},
-    ]
-    return dmc.Select(
-        id="ter-input",
-        data=options,
-        #value="SubsetName",
-        clearable=False,
-        placeholder="Select TER threshold...",
-    ) """
