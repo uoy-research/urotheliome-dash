@@ -89,14 +89,14 @@ def register_callbacks(app) -> None:
             height=600,
             margin=dict(l=50, r=50, t=80, b=50)
         )
+        fig.update_yaxes(rangemode="tozero")
         
         for axis in [fig.update_xaxes, fig.update_yaxes]:
             axis(
                 gridcolor='rgba(0,0,0,0.05)',
                 gridwidth=1,
                 linecolor='rgba(0,0,0,0.2)',
-                linewidth=1,
-                range=[0, None]
+                linewidth=1
             )
         
         return fig

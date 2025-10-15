@@ -6,12 +6,12 @@ ENV UV_COMPILE_BYTECODE=1
 
 WORKDIR /usr/local/app/DashApp
 
+# Install the dependencies
 COPY pyproject.toml ../pyproject.toml
 COPY uv.lock ../uv.lock
-COPY DashApp/ ./
-
-# Install the dependencies
 RUN uv sync
+
+COPY DashApp/ ./
 
 # Update PATH to include virtual env binaries
 ENV PATH="/usr/local/app/.venv/bin:$PATH"

@@ -9,7 +9,7 @@ def gene_dropdown():
         id="gene-dropdown",
         data=[{"label": gene, "value": gene} for gene in gene_names],
         searchable=True,
-        #limit=50,
+        limit=50,
         placeholder="Select genes...",
         clearable=True,
     )
