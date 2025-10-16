@@ -79,7 +79,11 @@ def gene_dashboard_layout() -> html.Div:
         html.Hr(className="my-2"),
         
         html.Label("Select Second Gene", htmlFor="gene-comparison-dropdown-2", className="fw-bold small mt-2"),
-        gene_comparison_dropdown_2()
+        gene_comparison_dropdown_2(),
+
+        html.Label("Y-axis Type", htmlFor="y-axis-radio", className="fw-bold small mt-2"),
+        y_axis_radio(),
+        html.Hr(className="my-2"),
     ]
 
     # TER slider control for global controls

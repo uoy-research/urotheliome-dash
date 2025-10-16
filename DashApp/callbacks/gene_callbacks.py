@@ -219,13 +219,14 @@ def register_callbacks(app) -> None:
             Input("gene-comparison-dropdown-2", "value"),
             Input("dataset-radio", "value"),
             Input("tabs", "active_tab"),
-            Input("ter-input", "value")
+            Input("ter-input", "value"),
+            Input("y-axis-radio","value")
         ],
         state=[State("gene-comparison-plot", "figure")],
         prevent_initial_call=True,
     )
     def update_comparison_plot(gene1: str, gene2: str, selected_datasets: list, 
-        active_tab: str, ter_threshold: int, current_figure: Dict[str, Any]) -> Tuple[Dict[str, Any], str, bool]:
+        active_tab: str, ter_threshold: int, y_axis_type: str, current_figure: Dict[str, Any]) -> Tuple[Dict[str, Any], str, bool]:
         ctx = callback_context
         if not ctx.triggered or active_tab != "gene-comparison" and ctx.triggered[0]['prop_id'].split('.')[0] != "tabs":
             return no_update, no_update, no_update
@@ -339,6 +340,12 @@ def register_callbacks(app) -> None:
                 opacity=0.7,
                 size_max=10
             )
+
+            #Update y-axis
+            if y_axis_type == "linear":
+                fig.update_yaxes(type="linear")
+            else:
+                fig.update_yaxes(type="log")
             
             # Update layout
             plot_title = f"Gene Comparison: {gene1} vs {gene2}"
