@@ -114,13 +114,14 @@ def register_callbacks(app) -> None:
             Input("xaxis-dropdown", "value"),
             Input("plot-type-radio", "value"),
             Input("tabs", "active_tab"),
-            Input("ter-input", "value")
+            Input("ter-input", "value"),
+            Input("y-axis-radio","value")
         ],
         state=[State("gene-expression-plot", "figure")],
         prevent_initial_call=True,
     )
     def update_plot(selected_genes: str, selected_datasets: list, x_axis: str, plot_type: str, 
-                   active_tab: str, ter_threshold: int, current_figure: Dict[str, Any]) -> Tuple[Dict[str, Any], str, str, bool]:
+                   active_tab: str, ter_threshold: int, y_axis_type: str, current_figure: Dict[str, Any]) -> Tuple[Dict[str, Any], str, str, bool]:
         ctx = callback_context
         if not ctx.triggered or active_tab != "gene-visualization" and ctx.triggered[0]['prop_id'].split('.')[0] != "tabs":
             return no_update, no_update, no_update, no_update
@@ -182,6 +183,12 @@ def register_callbacks(app) -> None:
             else:  # strip/swarm plot (default)
                 fig = px.strip(data, x=x_axis, y='TPM', color="DatasetName", 
                                hover_data=hover_cols)
+
+            #Update y-axis
+            if y_axis_type == "linear":
+                fig.update_yaxes(type="linear")
+            else:
+                fig.update_yaxes(type="log")    
             
             # Update layout
             plot_title = f"Expression of {(selected_genes)} by {x_axis}"

@@ -53,3 +53,20 @@ def ter_radio():
             id="ter-input",
         ),
     ])
+
+def y_axis_radio():
+
+    return html.Div([
+        # y-axis radio buttons
+        dbc.RadioItems(
+            options=[
+                {"label": "Linear", "value": "linear"},
+                #{"label": "Log2", "value": "log2"},
+                {"label": "Log10", "value": "log10"},
+            ],
+            value="linear",
+            inline=True,
+            id="y-axis-radio",
+            className="mb-2 small"
+        ),
+    ])
