@@ -25,16 +25,16 @@ def load_metadata_tsv(file_path):
     return df
 
 def load_all_data_tsv(file_path):
-    df = pd.read_csv(file_path, sep='\t', low_memory=False)
+    df = pd.read_csv(file_path, sep='\t', low_memory=True)
     return df
 
 def insert_into_db(df, table_name, conn):
     #Insert a DataFrame (clean) into the specified SQLite table.
     try:
-        df.to_sql(table_name, conn, if_exists='append', index=False)
-        print(f"Successfully inserted data into {table_name}")
+        df.to_sql(table_name, conn, if_exists='replace', chunksize=10000,index=False)
+        print(f"Successfully updated {table_name} with new data")
     except Exception as e:
-        print(f"Error inserting into {table_name}: {e}")
+        print(f"Error updating {table_name}: {e}")
         
 def merge_all_datasets(base_path):
     #Merges all datasets from master.tsv and saves as all_data_test.tsv
@@ -68,7 +68,8 @@ def merge_all_datasets(base_path):
 merged_df = merge_all_datasets("../DashApp/data/script_test/")
 
 metadata_df = load_metadata_tsv(metadata_file_path)
-all_data_df = load_all_data_tsv(all_data_file_path)
+#all_data_df = load_all_data_tsv(all_data_file_path)
+all_data_df = merged_df
 
 # Cleaning all_data_df
 #print(all_data_df.info())
@@ -113,6 +114,33 @@ categorical_columns = ["subset_name", "Dataset", "Tissue", "NHU_differentiation"
 # - Gene
 # - Sample
 # - Gene_Expression
+
+# - Gene_Expression
+#all_data_df
+# Drop columns if column name in {'TCGA-BL-A13I-01A', 'TCGA-BL-A13J-01A', 'TCGA-BL-A0C8-01A'}
+columns_to_drop = {'TCGA-BL-A13I-01A', 'TCGA-BL-A13J-01A', 'TCGA-BL-A0C8-01A'}
+all_data_df.drop(columns=columns_to_drop, inplace=True)
+print("dropped columns")
+#all_data_df
+print(all_data_df.shape)
+df_long = all_data_df.melt(id_vars=["genes"], var_name="sample_id", value_name="TPM")
+print("melted")
+#df_long
+df_long.dropna(subset=["TPM"], inplace=True)
+print("dropped na")
+df_long = df_long.rename(columns={"genes": "GeneName", "sample_id": "SampleId"})
+print("columns renamed")
+#df_long
+# Insert into db
+insert_into_db(df_long, "GeneExpression", conn)
+print("end of expression statement")
+
+# - Gene
+gene_df = all_data_df[['genes']].drop_duplicates().reset_index(drop=True)
+gene_df = gene_df.rename(columns={"genes": "GeneName"})
+#gene_df
+# Insert into db
+insert_into_db(gene_df, "Gene", conn)
 
 # NHU
 nhu_df = metadata_df[['NHU_differentiation']].drop_duplicates().reset_index(drop=True)
@@ -180,13 +208,6 @@ vital_status_df = vital_status_df.rename(columns={"vital_status": "Status"})
 # Insert into db
 insert_into_db(vital_status_df, "VitalStatus", conn)
 
-# - Gene
-gene_df = all_data_df[['genes']].drop_duplicates().reset_index(drop=True)
-gene_df = gene_df.rename(columns={"genes": "GeneName"})
-#gene_df
-# Insert into db
-insert_into_db(gene_df, "Gene", conn)
-
 # - Sample
 metadata_df.replace({'?': None, 'NaN': None, '': None}, inplace=True)
 metadata_df = metadata_df.where(pd.notna(metadata_df), None)  # Convert all NaNs to None
@@ -204,29 +225,18 @@ metadata_df.rename(columns={"Sample": "SampleId", "subset_name": "SubsetName", "
 insert_into_db(metadata_df, "Sample", conn)
 #metadata_df
 
-# - Gene_Expression
-all_data_df
-# Drop columns if column name in {'TCGA-BL-A13I-01A', 'TCGA-BL-A13J-01A', 'TCGA-BL-A0C8-01A'}
-columns_to_drop = {'TCGA-BL-A13I-01A', 'TCGA-BL-A13J-01A', 'TCGA-BL-A0C8-01A'}
-all_data_df.drop(columns=columns_to_drop, inplace=True)
-#all_data_df
-df_long = all_data_df.melt(id_vars=["genes"], var_name="sample_id", value_name="TPM")
-#df_long
-df_long.dropna(subset=["TPM"], inplace=True)
-df_long = df_long.rename(columns={"genes": "GeneName", "sample_id": "SampleId"})
-#df_long
-# Insert into db
-insert_into_db(df_long, "GeneExpression", conn)
-
 # Create indexes for faster querying
 # Rename to PascalCase
 cursor.execute("CREATE INDEX IF NOT EXISTS IdxGeneExpressionGeneName ON GeneExpression(GeneName);")
+print("created index for GeneName")
 cursor.execute("CREATE INDEX IF NOT EXISTS IdxSampleDatasetName ON Sample(DatasetName);")
+print("created index for Sample")
 
 # Save changes
 conn.commit()
 
 cursor.execute("SELECT COUNT(*) FROM GeneExpression")
+print("selected count(*) from gene expression")
 row_count = cursor.fetchone()[0]
 print(f"Total rows in GeneExpression: {row_count}")
 
