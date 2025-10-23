@@ -5,20 +5,32 @@
 
 import sqlite3
 import pandas as pd
+import argparse
 
 import os
 print(os.getcwd())
 
+parser = argparse.ArgumentParser()
+parser.add_argument("db_path", type=str,
+                    help="path to the database")
+parser.add_argument("metadata_file_path", type=str,
+                    help="path to the metadata file")
+parser.add_argument("data_folder_path", type=str,
+                    help="path to the data folder")
+args = parser.parse_args()
+
 # Connect to the existing SQLite database
-db_path = "../DashApp/data/script_test/UrotheliomeDataScriptTest.db"
+#db_path = "../DashApp/data/script_test/UrotheliomeDataScriptTest.db"
+db_path = args.db_path
 conn = sqlite3.connect(db_path)
 cursor = conn.cursor()
 
 # Enable foreign key constraints
 conn.execute("PRAGMA foreign_keys = ON;")
 
-metadata_file_path = "../DashApp/data/script_test/metadata_v4.tsv"
-all_data_file_path = "../DashApp/data/script_test/all_data_test.tsv"
+#metadata_file_path = "../DashApp/data/script_test/metadata_v4.tsv"
+metadata_file_path = args.metadata_file_path
+#all_data_file_path = "../DashApp/data/script_test/all_data_test.tsv"
 
 def load_metadata_tsv(file_path):
     df = pd.read_csv(file_path, sep='\t')
@@ -65,7 +77,8 @@ def merge_all_datasets(base_path):
     return all_tsv
 
 # currently equivalent to all_data.tsv but depends on master.tsv file contents
-merged_df = merge_all_datasets("../DashApp/data/script_test/")
+#merged_df = merge_all_datasets("../DashApp/data/script_test/")
+merged_df = merge_all_datasets(args.data_folder_path)
 
 metadata_df = load_metadata_tsv(metadata_file_path)
 #all_data_df = load_all_data_tsv(all_data_file_path)
