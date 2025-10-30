@@ -23,9 +23,38 @@ cursor = conn.cursor()
 # Enable foreign key constraints
 conn.execute("PRAGMA foreign_keys = ON;")
 
-def load_metadata_tsv(file_path):
-    df = pd.read_csv(file_path, sep='\t')
-    return df
+def prepare_dimension_table(values, name, vals_to_remove=['?']):
+    """
+    Prepares a dimension table for the DB.
+
+    The dimension tables are the tables that store a single property and are
+    linked by foreign key to the main fact table (Sample in this instance).
+    All of these tables are processed in typically the same way with a lot of
+    duplicated code.
+
+    In particular the steps are:
+
+          - Obtain the unique values
+          - Reset index
+          - Remove missing values
+          - Rename columns
+
+    Args:
+        - values (pandas.Series): A pandas series of all the raw values.
+        - name (str): The new column name.
+        - vals_to_remove (list[str]): List of values to remove.
+
+    Returns:
+        A pandas DataFrame with duplicate values removed.
+    """
+    df = (
+        pd.DataFrame({ name: values })
+        .drop_duplicates()
+        .dropna()
+        .reset_index(drop=True)
+    )
+    return df.loc[~df[name].isin(vals_to_remove)]
+
 
 def insert_into_db(df, table_name, conn):
     #Insert a DataFrame (clean) into the specified SQLite table.
@@ -34,6 +63,34 @@ def insert_into_db(df, table_name, conn):
         print(f"Successfully populated {table_name}")
     except Exception as e:
         print(f"Error updating {table_name}: {e}")
+
+
+def create_dimension(values, table_name, column_name, conn, vals_to_remove=['?']):
+    """
+    Creates a dimension table in the DB.
+
+    Takes a list of raw values and processes it into a format that is expected
+    by the DB scheme. In particular it finds the unique values, removes missing
+    or other unsupported characters, and sets the appropriate column names.
+
+    Args:
+        - values (pandas.Series): A pandas series of all the raw values.
+        - table_name (str): Name of the table to create.
+        - column_name (str): The new column name.
+        - conn (sqlite3.connection): Handle to an SQLite3 DB connection.
+        - vals_to_remove (list[str]): List of values to remove.
+
+    Returns:
+        None, populates a table in the DB as a side-effect.
+    """
+    df_clean = prepare_dimension_table(values, column_name, vals_to_remove)
+    insert_into_db(df_clean, table_name, conn)
+
+
+def load_metadata_tsv(file_path):
+    df = pd.read_csv(file_path, sep='\t')
+    return df
+
 
 def merge_all_datasets(base_path):
     first_file = True
@@ -95,74 +152,79 @@ df_long = df_long.merge(metadata_df[['Sample']], how="inner", left_on='SampleId'
 # Insert into db
 # TODO shouldn't this be violating a FK constraint? I.e. adding TPM counts for
 # samples but the Sample table hasn't been populated yet. Check again when have
-# DB created from schema
+# DB created from schema. The order of table creation in the comments above
+# looks correct - so why is the actual order in code not the same, and why
+# doesn't it error?
 insert_into_db(df_long, "GeneExpression", conn)
 
 # - Gene
-gene_df = all_data_df[['genes']].drop_duplicates().reset_index(drop=True)
-gene_df = gene_df.rename(columns={"genes": "GeneName"})
-# Insert into db
-insert_into_db(gene_df, "Gene", conn)
+create_dimension(all_data_df['genes'], 'Gene', 'GeneName', conn)
 
 # NHU
-nhu_df = metadata_df[['NHU_differentiation']].drop_duplicates().reset_index(drop=True)
-nhu_df = nhu_df.dropna()
-# Remove '?' row
-nhu_df = nhu_df[nhu_df['NHU_differentiation'] != '?']
-nhu_df = nhu_df.rename(columns={"NHU_differentiation": "NhuDifferentiation"})
-# Insert into db
-insert_into_db(nhu_df, "NHU", conn)
+create_dimension(
+    metadata_df['NHU_differentiation'],
+    'NHU',
+    'NhuDifferentiation',
+    conn
+)
 
 # Dataset_Subset
-dataset_subset_df = metadata_df[['subset_name']].drop_duplicates().reset_index(drop=True)
-dataset_subset_df = dataset_subset_df.rename(columns={"subset_name": "SubsetName"})
-# Insert into db
-insert_into_db(dataset_subset_df, "DatasetSubset", conn)
+create_dimension(
+    metadata_df['subset_name'],
+    'DatasetSubset',
+    'SubsetName',
+    conn
+)
 
-# - Dataset
-dataset_df = metadata_df[['Dataset']].drop_duplicates().reset_index(drop=True)
-dataset_df = dataset_df.rename(columns={"Dataset": "DatasetName"})
-# Insert into db
-insert_into_db(dataset_df, "Dataset", conn)
+# Dataset
+create_dimension(
+    metadata_df['Dataset'],
+    'Dataset',
+    'DatasetName',
+    conn
+)
 
-# - Tissue
-tissue_df = metadata_df[['Tissue']].drop_duplicates().reset_index(drop=True)
-tissue_df = tissue_df.rename(columns={"Tissue": "TissueName"})
-# Insert into db
-insert_into_db(tissue_df, "Tissue", conn)
+# Tissue
+create_dimension(
+    metadata_df['Tissue'],
+    'Tissue',
+    'TissueName',
+    conn
+)
 
-# - Substrate
-substrate_df = metadata_df[['Substrate']].drop_duplicates().reset_index(drop=True)
-# Remove nan
-substrate_df = substrate_df.dropna()
-# Remove '?' row
-substrate_df = substrate_df[substrate_df['Substrate'] != '?']
-substrate_df = substrate_df.rename(columns={"Substrate": "SubstrateType"})
-# Insert into db
-insert_into_db(substrate_df, "Substrate", conn)
+# Substrate
+create_dimension(
+    metadata_df['Substrate'],
+    'Substrate',
+    'SubstrateType',
+    conn
+)
 
-# - Gender
-gender_df = metadata_df[['Gender']].drop_duplicates().reset_index(drop=True)
-# remove nan
-gender_df = gender_df.dropna()
-# Insert into db
-insert_into_db(gender_df, "Gender", conn)
+# Gender
+create_dimension(
+    metadata_df['Gender'],
+    'Gender',
+    'Gender',
+    conn
+)
 
-# - Tumor_Stage
-tumor_stage_df = metadata_df[['tumor_stage']].drop_duplicates().reset_index(drop=True)
-tumor_stage_df = tumor_stage_df.dropna()
-tumor_stage_df = tumor_stage_df.rename(columns={"tumor_stage": "Stage"})
-# Insert into db
-insert_into_db(tumor_stage_df, "TumorStage", conn)
+# Tumor_Stage
+create_dimension(
+    metadata_df['tumor_stage'],
+    'TumorStage',
+    'Stage',
+    conn
+)
 
-# - Vital_Status
-vital_status_df = metadata_df[['vital_status']].drop_duplicates().reset_index(drop=True)
-vital_status_df = vital_status_df.dropna()
-vital_status_df = vital_status_df.rename(columns={"vital_status": "Status"})
-# Insert into db
-insert_into_db(vital_status_df, "VitalStatus", conn)
+# Vital_Status
+create_dimension(
+    metadata_df['vital_status'],
+    'VitalStatus',
+    'Status',
+    conn
+)
 
-# - Sample
+# Sample
 metadata_df.replace({'?': None, 'NaN': None, '': None}, inplace=True)
 metadata_df = metadata_df.where(pd.notna(metadata_df), None)  # Convert all NaNs to None
 # Remove unnecessary columns
