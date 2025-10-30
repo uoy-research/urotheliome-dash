@@ -61,7 +61,7 @@ def prepare_dimension_table(values, name, vals_to_remove=['?']):
 
 def insert_into_db(df, table_name, conn):
     #Insert a DataFrame (clean) into the specified SQLite table.
-    df.to_sql(table_name, conn, if_exists='fail', chunksize=5000, index=False)
+    df.to_sql(table_name, conn, if_exists='append', chunksize=5000, index=False)
     print(f"Successfully populated {table_name}")
 
 
@@ -141,22 +141,7 @@ all_data_df.iloc[:, 1:] = all_data_df.iloc[:, 1:].apply(pd.to_numeric, errors='c
 # - Sample
 # - Gene_Expression
 
-# - Gene_Expression
-df_long = all_data_df.melt(id_vars=["genes"], var_name="sample_id", value_name="TPM")
-df_long.dropna(subset=["TPM"], inplace=True)
-df_long = df_long.rename(columns={"genes": "GeneName", "sample_id": "SampleId"})
-# Restrict gene data to sample ids that are in the metadata
-df_long = df_long.loc[df_long['SampleId'].isin(metadata_df['Sample'].unique())]
-
-# Insert into db
-# TODO shouldn't this be violating a FK constraint? I.e. adding TPM counts for
-# samples but the Sample table hasn't been populated yet. Check again when have
-# DB created from schema. The order of table creation in the comments above
-# looks correct - so why is the actual order in code not the same, and why
-# doesn't it error?
-insert_into_db(df_long, "GeneExpression", conn)
-
-# - Gene
+# Gene
 create_dimension(all_data_df['genes'], 'Gene', 'GeneName', conn)
 
 # NHU
@@ -236,6 +221,14 @@ metadata_df.drop(columns=["shared_num_same_col", "CCL_relatedness", "CCL_tissue_
 metadata_df.rename(columns={"Sample": "SampleId", "subset_name": "SubsetName", "Dataset": "DatasetName", "Tissue": "TissueName", "Substrate": "SubstrateType", "Gender": "Gender", "tumor_stage": "Stage", "vital_status": "Status", "NHU_differentiation": "NhuDifferentiation", "TER": "TER", "days_to_death": "DaysToDeath"}, inplace=True)
 # Insert into db
 insert_into_db(metadata_df, "Sample", conn)
+
+# Gene_Expression
+df_long = all_data_df.melt(id_vars=["genes"], var_name="sample_id", value_name="TPM")
+df_long.dropna(subset=["TPM"], inplace=True)
+df_long = df_long.rename(columns={"genes": "GeneName", "sample_id": "SampleId"})
+# Restrict gene data to sample ids that are in the metadata
+df_long = df_long.loc[df_long['SampleId'].isin(metadata_df['SampleId'].unique())]
+insert_into_db(df_long, "GeneExpression", conn)
 
 # Create indexes for faster querying
 # Rename to PascalCase
