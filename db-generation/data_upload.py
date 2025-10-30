@@ -1,8 +1,6 @@
 # Copy-paste of import_data.ipynb with some edits
 
 # WORKS ON EMPTY DATABASE
-# 3 SAMPLES ARE MISSING FROM METADATA BUT EXIST IN ALL_DATA - THEY HAVE BEEN DROPPED
-
 import argparse
 import os
 import pandas as pd
@@ -69,23 +67,9 @@ def merge_all_datasets(base_path):
 all_data_df = merge_all_datasets(args.data_folder_path)
 metadata_df = load_metadata_tsv(args.metadata_file_path)
 
-# Convert all columns except 'gene' to numeric, setting errors='coerce' to convert invalid values to NaN
+# Convert all columns except first ('genes') to numeric, setting invalid values
+# to NaN
 all_data_df.iloc[:, 1:] = all_data_df.iloc[:, 1:].apply(pd.to_numeric, errors='coerce')
-missing_values_count = all_data_df.iloc[:, 1:].isnull().sum().sum()
-print(f"\nTotal NaN values found in expression data: {missing_values_count}")
-
-# Find names of all genes (rows) with missing values
-missing_genes = all_data_df[all_data_df.isnull().any(axis=1)]['genes'].tolist()
-
-# Create a DataFrame of gene | number of samples with missing TPM value
-missing_tpm_counts = all_data_df.isnull().sum(axis=1).reset_index()
-missing_tpm_counts.columns = ['index', 'missing_count']
-missing_tpm_counts = missing_tpm_counts[missing_tpm_counts['missing_count'] > 0]
-missing_tpm_counts = missing_tpm_counts.merge(all_data_df[['genes']], left_on='index', right_index=True)
-missing_tpm_counts = missing_tpm_counts[['genes', 'missing_count']]
-
-categorical_columns = ["subset_name", "Dataset", "Tissue", "NHU_differentiation",
-                       "Substrate", "Gender", "tumor_stage", "vital_status"]
 
 # Order of table creation + population
 # - NHU
@@ -109,6 +93,9 @@ df_long = all_data_df.melt(id_vars=["genes"], var_name="sample_id", value_name="
 df_long.dropna(subset=["TPM"], inplace=True)
 df_long = df_long.rename(columns={"genes": "GeneName", "sample_id": "SampleId"})
 # Insert into db
+# TODO shouldn't this be violating a FK constraint? I.e. adding TPM counts for
+# samples but the Sample table hasn't been populated yet. Check again when have
+# DB created from schema
 insert_into_db(df_long, "GeneExpression", conn)
 
 # - Gene
@@ -198,5 +185,4 @@ print("created index for Sample")
 
 # Save changes
 conn.commit()
-
 conn.close()
