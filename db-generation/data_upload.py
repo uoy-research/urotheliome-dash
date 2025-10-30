@@ -4,8 +4,9 @@
 # 3 SAMPLES ARE MISSING FROM METADATA BUT EXIST IN ALL_DATA - THEY HAVE BEEN DROPPED
 
 import argparse
-import sqlite3
+import os
 import pandas as pd
+import sqlite3
 
 parser = argparse.ArgumentParser()
 parser.add_argument("db_path", type=str,
@@ -31,38 +32,36 @@ def load_metadata_tsv(file_path):
 def insert_into_db(df, table_name, conn):
     #Insert a DataFrame (clean) into the specified SQLite table.
     try:
-        # TODO check other if_exists
-        df.to_sql(table_name, conn, if_exists='replace', chunksize=10000, index=False)
-        print(f"Successfully updated {table_name} with new data")
+        df.to_sql(table_name, conn, if_exists='fail', chunksize=5000, index=False)
+        print(f"Successfully populated {table_name}")
     except Exception as e:
         print(f"Error updating {table_name}: {e}")
-        
+
 def merge_all_datasets(base_path):
-    #Merges all datasets from master.tsv and saves as all_data_test.tsv
-    # TODO what is this doing?!
-    master_cv = pd.read_csv(base_path + "master.tsv", delimiter="\t")
+    first_file = True
 
-    all_tsv = pd.DataFrame()
-    for _, row in master_cv.iterrows():
-        filename, _ = row["Filename"], row["Description"]
-        df = pd.read_csv(base_path + filename, delimiter="\t")
-        print("Dataset: {} Shape {}".format(filename, df.shape))
+    # Rather than incrementally joining each dataset, could read all datasets
+    # into a list and then combine in 1 call:
+    # pd.concat([x.set_index('genes') for x in dfs], axis=1).reset_index()
+    # However, this has 2 downsides: 1) would require all data to fit into
+    # memory, and 2) requires that the gene column is called 'genes', rather
+    # than the more flexible requirement that gene names are in the first column
+    for filename in os.listdir(base_path):
+        # Exclude metadata files
+        if "metadata" in filename:
+            continue
 
-        # Exclude metadata file
-        if "metadata" not in filename:
-            if not all_tsv.empty:
-                # For gene expression data, merge on the gene column (first column)
-                # Assuming first column contains gene names
-                gene_col = df.columns[0]  # Usually 'genes' or similar
-                all_tsv = pd.merge(all_tsv, df, on=gene_col, how="outer")
-            else:
-                all_tsv = df
-    print('completed merging')
+        df = pd.read_csv(os.path.join(base_path, filename), delimiter="\t")
+        print(f"Dataset: {filename} Shape {df.shape}")
 
-    print(f"Final merged dataset shape: {all_tsv.shape}")
-
-    # Uncomment to save as .tsv
-    all_tsv.to_csv(base_path + "all_data_test.tsv", sep="\t", index=False)
+        if first_file:
+            all_tsv = df
+            first_file = False
+        else:
+            # For gene expression data, merge on the gene column (first column)
+            # Assuming first column contains gene names (usually 'genes')
+            gene_col = df.columns[0]
+            all_tsv = pd.merge(all_tsv, df, on=gene_col, how="outer")
 
     return all_tsv
 
@@ -232,5 +231,4 @@ for sample_id, subset_name in updated_values:
 conn.commit()
 print("\n✓ SubsetName corrections committed to database")
 
-# Close without saving changes
 conn.close()
