@@ -85,13 +85,13 @@ all_data_df.iloc[:, 1:] = all_data_df.iloc[:, 1:].apply(pd.to_numeric, errors='c
 # - Gene_Expression
 
 # - Gene_Expression
-# Drop columns if column name in {'TCGA-BL-A13I-01A', 'TCGA-BL-A13J-01A', 'TCGA-BL-A0C8-01A'}
-# TODO what is this doing, and should it be done in metadata / raw data?
-columns_to_drop = {'TCGA-BL-A13I-01A', 'TCGA-BL-A13J-01A', 'TCGA-BL-A0C8-01A'}
-all_data_df.drop(columns=columns_to_drop, inplace=True)
 df_long = all_data_df.melt(id_vars=["genes"], var_name="sample_id", value_name="TPM")
 df_long.dropna(subset=["TPM"], inplace=True)
 df_long = df_long.rename(columns={"genes": "GeneName", "sample_id": "SampleId"})
+# Restrict gene data to sample ids that are in the metadata
+df_long = df_long.merge(metadata_df[['Sample']], how="inner", left_on='SampleId',
+                        right_on='Sample')
+
 # Insert into db
 # TODO shouldn't this be violating a FK constraint? I.e. adding TPM counts for
 # samples but the Sample table hasn't been populated yet. Check again when have
