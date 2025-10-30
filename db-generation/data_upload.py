@@ -61,11 +61,8 @@ def prepare_dimension_table(values, name, vals_to_remove=['?']):
 
 def insert_into_db(df, table_name, conn):
     #Insert a DataFrame (clean) into the specified SQLite table.
-    try:
-        df.to_sql(table_name, conn, if_exists='fail', chunksize=5000, index=False)
-        print(f"Successfully populated {table_name}")
-    except Exception as e:
-        print(f"Error updating {table_name}: {e}")
+    df.to_sql(table_name, conn, if_exists='fail', chunksize=5000, index=False)
+    print(f"Successfully populated {table_name}")
 
 
 def create_dimension(values, table_name, column_name, conn, vals_to_remove=['?']):
