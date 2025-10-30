@@ -53,7 +53,10 @@ def prepare_dimension_table(values, name, vals_to_remove=['?']):
         .dropna()
         .reset_index(drop=True)
     )
-    return df.loc[~df[name].isin(vals_to_remove)]
+    if len(vals_to_remove) > 0:
+        df = df.loc[~df[name].isin(vals_to_remove)]
+
+    return df
 
 
 def insert_into_db(df, table_name, conn):
@@ -146,8 +149,7 @@ df_long = all_data_df.melt(id_vars=["genes"], var_name="sample_id", value_name="
 df_long.dropna(subset=["TPM"], inplace=True)
 df_long = df_long.rename(columns={"genes": "GeneName", "sample_id": "SampleId"})
 # Restrict gene data to sample ids that are in the metadata
-df_long = df_long.merge(metadata_df[['Sample']], how="inner", left_on='SampleId',
-                        right_on='Sample')
+df_long = df_long.loc[df_long['SampleId'].isin(metadata_df['Sample'].unique())]
 
 # Insert into db
 # TODO shouldn't this be violating a FK constraint? I.e. adding TPM counts for
