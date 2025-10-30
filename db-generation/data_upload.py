@@ -199,36 +199,4 @@ print("created index for Sample")
 # Save changes
 conn.commit()
 
-# Fix SubsetName mappings for specific samples to ensure one-to-one mapping
-# Y2384-D should be changed to Uro-D (from whatever it currently is)
-# Y2383-P0 should be changed to Uro-P0 (from whatever it currently is)
-# This maintains historical SubsetName mapping as discussed
-# TODO do this in meta data file
-print("Before correction - checking current SubsetName values:")
-cursor.execute("SELECT SampleId, SubsetName FROM Sample WHERE SampleId IN ('Y2384-D', 'Y2383-P0')")
-current_values = cursor.fetchall()
-for sample_id, subset_name in current_values:
-    print(f"  {sample_id}: {subset_name}")
-# Apply the corrections
-corrections_made = 0
-# Update Y2384-D to Uro-D
-cursor.execute("UPDATE Sample SET SubsetName = 'Uro-D' WHERE SampleId = 'Y2384-D'")
-if cursor.rowcount > 0:
-    corrections_made += 1
-    print(f"✓ Updated Y2384-D SubsetName to 'Uro-D'")
-# Update Y2383-P0 to Uro-P0  
-cursor.execute("UPDATE Sample SET SubsetName = 'Uro-P0' WHERE SampleId = 'Y2383-P0'")
-if cursor.rowcount > 0:
-    corrections_made += 1
-    print(f"✓ Updated Y2383-P0 SubsetName to 'Uro-P0'")
-print(f"\nTotal corrections applied: {corrections_made}")
-print("\nAfter correction - verifying updated values:")
-cursor.execute("SELECT SampleId, SubsetName FROM Sample WHERE SampleId IN ('Y2384-D', 'Y2383-P0')")
-updated_values = cursor.fetchall()
-for sample_id, subset_name in updated_values:
-    print(f"  {sample_id}: {subset_name}")
-# Commit the changes
-conn.commit()
-print("\n✓ SubsetName corrections committed to database")
-
 conn.close()
