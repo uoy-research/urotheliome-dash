@@ -209,16 +209,25 @@ create_dimension(
 )
 
 # Sample
+# Restrict to columns of interest
+metadata_cols = [
+    ("Sample", "SampleId"),
+    ("subset_name", "SubsetName"),
+    ("Dataset", "DatasetName"),
+    ("Tissue", "TissueName"),
+    ("Substrate", "SubstrateType"),
+    ("Gender", "Gender"),
+    ("tumor_stage", "Stage"),
+    ("vital_status", "Status"),
+    ("NHU_differentiation", "NhuDifferentiation"),
+    ("TER", "TER"),
+    ("days_to_death", "DaysToDeath")
+]
+metadata_df = metadata_df[[x[0] for x in metadata_cols]]
+metadata_df.rename(columns={ x[0]: x[1] for x in metadata_cols }, inplace=True)
+# Clean error codes and missingness
 metadata_df.replace({'?': None, 'NaN': None, '': None}, inplace=True)
-metadata_df = metadata_df.where(pd.notna(metadata_df), None)  # Convert all NaNs to None
-# Remove unnecessary columns
-metadata_df.drop(columns=["shared_num_same_col", "CCL_relatedness", "CCL_tissue_origin", "Diagnosis", 'incl_ABS-Ca_diff_Bladder',
-       'incl_ABS-Ca_diff_healthy_Bladder', 'incl_ABS-Ca_diff_Ureter',
-       'incl_undiff_Bladder', 'incl_undiff_healthy_Bladder',
-       'incl_undiff_Ureter', 'incl_P0_Bladder', 'incl_P0_healthy_Bladder',
-       'incl_P0_Ureter','TCGA408_classifier', 'MIBC_2019CC', 'MIBC_2019CC-noSR'], inplace=True)
-# Rename columns
-metadata_df.rename(columns={"Sample": "SampleId", "subset_name": "SubsetName", "Dataset": "DatasetName", "Tissue": "TissueName", "Substrate": "SubstrateType", "Gender": "Gender", "tumor_stage": "Stage", "vital_status": "Status", "NHU_differentiation": "NhuDifferentiation", "TER": "TER", "days_to_death": "DaysToDeath"}, inplace=True)
+metadata_df = metadata_df.where(pd.notna(metadata_df), None)
 # Insert into db
 insert_into_db(metadata_df, "Sample", conn)
 
