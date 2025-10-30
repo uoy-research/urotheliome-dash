@@ -1,11 +1,11 @@
-# Copy-paste of import_data.ipynb with some edits 
+# Copy-paste of import_data.ipynb with some edits
 
 # WORKS ON EMPTY DATABASE
 # 3 SAMPLES ARE MISSING FROM METADATA BUT EXIST IN ALL_DATA - THEY HAVE BEEN DROPPED
 
+import argparse
 import sqlite3
 import pandas as pd
-import argparse
 
 parser = argparse.ArgumentParser()
 parser.add_argument("db_path", type=str,
@@ -24,14 +24,8 @@ cursor = conn.cursor()
 # Enable foreign key constraints
 conn.execute("PRAGMA foreign_keys = ON;")
 
-metadata_file_path = args.metadata_file_path
-
 def load_metadata_tsv(file_path):
     df = pd.read_csv(file_path, sep='\t')
-    return df
-
-def load_all_data_tsv(file_path):
-    df = pd.read_csv(file_path, sep='\t', low_memory=True)
     return df
 
 def insert_into_db(df, table_name, conn):
@@ -45,8 +39,9 @@ def insert_into_db(df, table_name, conn):
         
 def merge_all_datasets(base_path):
     #Merges all datasets from master.tsv and saves as all_data_test.tsv
+    # TODO what is this doing?!
     master_cv = pd.read_csv(base_path + "master.tsv", delimiter="\t")
-    
+
     all_tsv = pd.DataFrame()
     for _, row in master_cv.iterrows():
         filename, _ = row["Filename"], row["Description"]
@@ -63,19 +58,17 @@ def merge_all_datasets(base_path):
             else:
                 all_tsv = df
     print('completed merging')
-    
+
     print(f"Final merged dataset shape: {all_tsv.shape}")
 
     # Uncomment to save as .tsv
     all_tsv.to_csv(base_path + "all_data_test.tsv", sep="\t", index=False)
-    
+
     return all_tsv
 
-# currently equivalent to all_data.tsv but depends on master.tsv file contents
-merged_df = merge_all_datasets(args.data_folder_path)
-
-metadata_df = load_metadata_tsv(metadata_file_path)
-all_data_df = merged_df
+# Load all data
+all_data_df = merge_all_datasets(args.data_folder_path)
+metadata_df = load_metadata_tsv(args.metadata_file_path)
 
 # Convert all columns except 'gene' to numeric, setting errors='coerce' to convert invalid values to NaN
 all_data_df.iloc[:, 1:] = all_data_df.iloc[:, 1:].apply(pd.to_numeric, errors='coerce')
@@ -92,7 +85,7 @@ missing_tpm_counts = missing_tpm_counts[missing_tpm_counts['missing_count'] > 0]
 missing_tpm_counts = missing_tpm_counts.merge(all_data_df[['genes']], left_on='index', right_index=True)
 missing_tpm_counts = missing_tpm_counts[['genes', 'missing_count']]
 
-categorical_columns = ["subset_name", "Dataset", "Tissue", "NHU_differentiation", 
+categorical_columns = ["subset_name", "Dataset", "Tissue", "NHU_differentiation",
                        "Substrate", "Gender", "tumor_stage", "vital_status"]
 
 # Order of table creation + population
@@ -186,8 +179,6 @@ insert_into_db(vital_status_df, "VitalStatus", conn)
 # - Sample
 metadata_df.replace({'?': None, 'NaN': None, '': None}, inplace=True)
 metadata_df = metadata_df.where(pd.notna(metadata_df), None)  # Convert all NaNs to None
-metadata_df.shape
-metadata_df.columns
 # Remove unnecessary columns
 metadata_df.drop(columns=["shared_num_same_col", "CCL_relatedness", "CCL_tissue_origin", "Diagnosis", 'incl_ABS-Ca_diff_Bladder',
        'incl_ABS-Ca_diff_healthy_Bladder', 'incl_ABS-Ca_diff_Ureter',
