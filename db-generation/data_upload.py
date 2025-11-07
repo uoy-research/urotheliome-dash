@@ -120,6 +120,35 @@ def merge_all_datasets(base_path):
 
     return all_tsv
 
+def chunked_melt(df, id_vars, var_name, value_name, chunk_size):
+    """
+    Chunked melt operation to save memory usage.
+
+    Args:
+        - df (pd.DataFrame): DataFrame to melt.
+        - id_vars (List[str]): As in pandas.melt.
+        - var_name (str): As in pandas.melt.
+        - value_name (str): As in pandas.melt.
+        - chunk_size (int): Number of rows to pivot at a time.
+
+    Returns:
+        A pd.DataFrame of the combined long datasets.
+    """
+    chunked_res = []
+    chunk_size = 100000
+
+    for i in range(0, df.shape[0], chunk_size):
+        chunked_df = df.iloc[i:i+chunk_size]
+        chunked_df_long = chunked_df.melt(
+            id_vars=id_vars,
+            var_name=var_name,
+            value_name=value_name
+        )
+        chunked_df_long.dropna(subset=["TPM"], inplace=True)
+        chunked_res.append(chunked_df_long)
+
+    return pd.concat(chunked_res)
+
 # Load all data
 all_data_df = merge_all_datasets(args.data_folder_path)
 metadata_df = load_metadata_tsv(args.metadata_file_path)
@@ -232,8 +261,14 @@ metadata_df = metadata_df.where(pd.notna(metadata_df), None)
 insert_into_db(metadata_df, "Sample", conn)
 
 # Gene_Expression
-df_long = all_data_df.melt(id_vars=["genes"], var_name="sample_id", value_name="TPM")
-df_long.dropna(subset=["TPM"], inplace=True)
+df_long = chunked_melt(
+    all_data_df,
+    id_vars=['genes'],
+    var_name='sample_id',
+    value_name='TPM',
+    chunk_size=5000
+)
+
 df_long = df_long.rename(columns={"genes": "GeneName", "sample_id": "SampleId"})
 # Restrict gene data to sample ids that are in the metadata
 df_long = df_long.loc[df_long['SampleId'].isin(metadata_df['SampleId'].unique())]
