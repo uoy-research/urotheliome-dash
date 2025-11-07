@@ -60,10 +60,11 @@ def prepare_dimension_table(values, name, vals_to_remove=['?']):
     return df
 
 
-def insert_into_db(df, table_name, conn):
+def insert_into_db(df, table_name, conn, message=True):
     #Insert a DataFrame (clean) into the specified SQLite table.
     df.to_sql(table_name, conn, if_exists='append', chunksize=5000, index=False)
-    print(f"Successfully populated {table_name}")
+    if message:
+        print(f"Successfully populated {table_name}")
 
 
 def create_dimension(values, table_name, column_name, conn, vals_to_remove=['?']):
@@ -155,7 +156,8 @@ def chunked_melt_insert(df, id_vars, var_name, value_name, chunk_size_rows,
                 value_name=value_name
             )
             chunked_df_long.dropna(subset=["TPM"], inplace=True)
-            insert_into_db(chunked_df_long, "GeneExpression", conn)
+            insert_into_db(chunked_df_long, "GeneExpression", conn,
+                           message=False)
 
 # Load all data
 all_data_df = merge_all_datasets(args.data_folder_path)
@@ -274,6 +276,7 @@ all_samples = metadata_df['SampleId'].unique()
 all_cols = np.append(['genes'], all_samples)
 all_data_df = all_data_df[all_cols].rename(columns={'genes': 'GeneName'})
 
+# Insert into DB
 chunked_melt_insert(
     all_data_df,
     id_vars=['GeneName'],
@@ -282,6 +285,7 @@ chunked_melt_insert(
     chunk_size_rows=5000,
     chunk_size_cols=100
 )
+print("Successfully populated GeneExpression")
 
 # Create indexes for faster querying
 # Rename to PascalCase
