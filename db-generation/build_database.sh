@@ -1,10 +1,10 @@
 #!/bin/bash
 
-# TODO Should some of these be arguments rather than hardcoded?
-TEMP_DB="temp.db"
-PROD_DB="data.db"
-DATA_FOLDER="/opt/urotheliome-data/clean"
-METADATA_FILE="$DATA_FOLDER/metadata_v5.tsv"
+# Variables passed as arguments
+TEMP_DB=$1
+PROD_DB=$2
+DATA_FOLDER=$3
+METADATA_FILE="$DATA_FOLDER/$4"
 
 # Delete temporary DB if already exists
 if [ -f "$TEMP_DB" ] ; then
