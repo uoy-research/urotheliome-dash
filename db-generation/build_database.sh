@@ -4,7 +4,7 @@
 TEMP_DB=$1
 PROD_DB=$2
 DATA_FOLDER=$3
-METADATA_FILE="$DATA_FOLDER/$4"
+METADATA_FILE=$4
 
 # Delete temporary DB if already exists
 if [ -f "$TEMP_DB" ] ; then
