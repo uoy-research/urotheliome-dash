@@ -16,7 +16,7 @@ sqlite3 $TEMP_DB < schema.sql > /dev/null
 
 # Populate DB
 # TODO In what circumstances are errors thrown?
-python data_upload.py $TEMP_DB $METADATA_FILE $DATA_FOLDER
+python3 data_upload.py $TEMP_DB $METADATA_FILE $DATA_FOLDER
 success=$?
 
 # If success, move DB to prod
