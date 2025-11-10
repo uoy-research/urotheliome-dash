@@ -1,10 +1,10 @@
 #!/bin/bash
 
-# TODO Should some of these be arguments rather than hardcoded?
-TEMP_DB="temp.db"
-PROD_DB="data.db"
-DATA_FOLDER="/opt/urotheliome-data/clean"
-METADATA_FILE="$DATA_FOLDER/metadata_v5.tsv"
+# Variables passed as arguments
+TEMP_DB=$1
+PROD_DB=$2
+DATA_FOLDER=$3
+METADATA_FILE=$4
 
 # Delete temporary DB if already exists
 if [ -f "$TEMP_DB" ] ; then
@@ -16,7 +16,7 @@ sqlite3 $TEMP_DB < schema.sql > /dev/null
 
 # Populate DB
 # TODO In what circumstances are errors thrown?
-python data_upload.py $TEMP_DB $METADATA_FILE $DATA_FOLDER
+python3 data_upload.py $TEMP_DB $METADATA_FILE $DATA_FOLDER
 success=$?
 
 # If success, move DB to prod

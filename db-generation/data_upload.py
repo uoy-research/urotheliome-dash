@@ -3,6 +3,7 @@
 # WORKS ON EMPTY DATABASE
 import argparse
 import os
+import numpy as np
 import pandas as pd
 import sqlite3
 
@@ -59,10 +60,11 @@ def prepare_dimension_table(values, name, vals_to_remove=['?']):
     return df
 
 
-def insert_into_db(df, table_name, conn):
+def insert_into_db(df, table_name, conn, message=True):
     #Insert a DataFrame (clean) into the specified SQLite table.
     df.to_sql(table_name, conn, if_exists='append', chunksize=5000, index=False)
-    print(f"Successfully populated {table_name}")
+    if message:
+        print(f"Successfully populated {table_name}")
 
 
 def create_dimension(values, table_name, column_name, conn, vals_to_remove=['?']):
@@ -119,6 +121,43 @@ def merge_all_datasets(base_path):
             all_tsv = pd.merge(all_tsv, df, on=gene_col, how="outer")
 
     return all_tsv
+
+def chunked_melt_insert(df, id_vars, var_name, value_name, chunk_size_rows,
+                 chunk_size_cols):
+    """
+    Chunked melt and DB insert operation to save memory usage.
+
+    The wide table (genes on rows, samples in columns) is chunked in
+    both dimensions. Each chunk is pivoted to long to match the DB
+    table format, and then the long chunk is inserted into the DB.
+
+    This saves a considerable amount of memory over making a single long
+    table (chunked or not) and inserting that in 1 go (chunked or not).
+
+    Args:
+        - df (pd.DataFrame): DataFrame to melt.
+        - id_vars (List[str]): As in pandas.melt.
+        - var_name (str): As in pandas.melt.
+        - value_name (str): As in pandas.melt.
+        - chunk_size_rows (int): Number of rows to pivot at a time.
+        - chunk_size_cols (int): Number of cols to pivot at a time.
+
+    Returns:
+        A pd.DataFrame of the combined long datasets.
+    """
+    for i in range(0, df.shape[0], chunk_size_rows):
+        end_row = min(df.shape[0], i+chunk_size_rows)
+        for j in range(1, df.shape[1], chunk_size_cols):
+            end_col = min(df.shape[1], j+chunk_size_cols)
+            chunked_df = df.iloc[i:end_row, np.r_[0, j:end_col]]
+            chunked_df_long = chunked_df.melt(
+                id_vars=id_vars,
+                var_name=var_name,
+                value_name=value_name
+            )
+            chunked_df_long.dropna(subset=["TPM"], inplace=True)
+            insert_into_db(chunked_df_long, "GeneExpression", conn,
+                           message=False)
 
 # Load all data
 all_data_df = merge_all_datasets(args.data_folder_path)
@@ -232,12 +271,21 @@ metadata_df = metadata_df.where(pd.notna(metadata_df), None)
 insert_into_db(metadata_df, "Sample", conn)
 
 # Gene_Expression
-df_long = all_data_df.melt(id_vars=["genes"], var_name="sample_id", value_name="TPM")
-df_long.dropna(subset=["TPM"], inplace=True)
-df_long = df_long.rename(columns={"genes": "GeneName", "sample_id": "SampleId"})
-# Restrict gene data to sample ids that are in the metadata
-df_long = df_long.loc[df_long['SampleId'].isin(metadata_df['SampleId'].unique())]
-insert_into_db(df_long, "GeneExpression", conn)
+# Restrict to sample IDs that are in metadata
+all_samples = metadata_df['SampleId'].unique()
+all_cols = np.append(['genes'], all_samples)
+all_data_df = all_data_df[all_cols].rename(columns={'genes': 'GeneName'})
+
+# Insert into DB
+chunked_melt_insert(
+    all_data_df,
+    id_vars=['GeneName'],
+    var_name='SampleId',
+    value_name='TPM',
+    chunk_size_rows=5000,
+    chunk_size_cols=100
+)
+print("Successfully populated GeneExpression")
 
 # Create indexes for faster querying
 # Rename to PascalCase
