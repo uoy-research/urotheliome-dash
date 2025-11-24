@@ -2,27 +2,12 @@
 
 # WORKS ON EMPTY DATABASE
 import argparse
+import logging
 import os
+import sqlite3
 import numpy as np
 import pandas as pd
-import sqlite3
 
-parser = argparse.ArgumentParser()
-parser.add_argument("db_path", type=str,
-                    help="path to the database")
-parser.add_argument("metadata_file_path", type=str,
-                    help="path to the metadata file")
-parser.add_argument("data_folder_path", type=str,
-                    help="path to the data folder")
-args = parser.parse_args()
-
-# Connect to the existing SQLite database
-db_path = args.db_path
-conn = sqlite3.connect(db_path)
-cursor = conn.cursor()
-
-# Enable foreign key constraints
-conn.execute("PRAGMA foreign_keys = ON;")
 
 def prepare_dimension_table(values, name, vals_to_remove=['?']):
     """
@@ -64,7 +49,7 @@ def insert_into_db(df, table_name, conn, message=True):
     #Insert a DataFrame (clean) into the specified SQLite table.
     df.to_sql(table_name, conn, if_exists='append', chunksize=5000, index=False)
     if message:
-        print(f"Successfully populated {table_name}")
+        logging.info(f"Successfully populated {table_name} with {df.shape[0]} rows")
 
 
 def create_dimension(values, table_name, column_name, conn, vals_to_remove=['?']):
@@ -109,7 +94,7 @@ def merge_all_datasets(base_path):
             continue
 
         df = pd.read_csv(os.path.join(base_path, filename), delimiter="\t")
-        print(f"Dataset: {filename} Shape {df.shape}")
+        logging.info(f"Found dataset: {filename} {df.shape}")
 
         if first_file:
             all_tsv = df
@@ -123,7 +108,7 @@ def merge_all_datasets(base_path):
     return all_tsv
 
 def chunked_melt_insert(df, id_vars, var_name, value_name, chunk_size_rows,
-                 chunk_size_cols):
+                 chunk_size_cols, conn):
     """
     Chunked melt and DB insert operation to save memory usage.
 
@@ -141,6 +126,7 @@ def chunked_melt_insert(df, id_vars, var_name, value_name, chunk_size_rows,
         - value_name (str): As in pandas.melt.
         - chunk_size_rows (int): Number of rows to pivot at a time.
         - chunk_size_cols (int): Number of cols to pivot at a time.
+        - conn (SQLite connection): SQLite connection handle.
 
     Returns:
         A pd.DataFrame of the combined long datasets.
@@ -159,141 +145,176 @@ def chunked_melt_insert(df, id_vars, var_name, value_name, chunk_size_rows,
             insert_into_db(chunked_df_long, "GeneExpression", conn,
                            message=False)
 
-# Load all data
-all_data_df = merge_all_datasets(args.data_folder_path)
-metadata_df = load_metadata_tsv(args.metadata_file_path)
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("db_path", type=str,
+                        help="path to the database")
+    parser.add_argument("metadata_file_path", type=str,
+                        help="path to the metadata file")
+    parser.add_argument("data_folder_path", type=str,
+                        help="path to the data folder")
+    parser.add_argument("log_file", type=str,
+                        help="path to the file to append logs to")
+    args = parser.parse_args()
 
-# Convert all columns except first ('genes') to numeric, setting invalid values
-# to NaN
-all_data_df.iloc[:, 1:] = all_data_df.iloc[:, 1:].apply(pd.to_numeric, errors='coerce')
+    # Connect to the existing SQLite database
+    db_path = args.db_path
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
 
-# Order of table creation + population
-# - NHU
-# - Dataset_Subset
-# - Dataset
-# - Tissue
-# - Substrate
-# - Gender
-# - Tumor_Stage
-# - Vital_Status
-# - Gene
-# - Sample
-# - Gene_Expression
+    # Enable foreign key constraints
+    conn.execute("PRAGMA foreign_keys = ON;")
 
-# Gene
-create_dimension(all_data_df['genes'], 'Gene', 'GeneName', conn)
+    # Setup logging
+    logging.basicConfig(filename=args.log_file,
+                        filemode='a',
+                        format='%(asctime)s,%(msecs)03d %(name)s %(levelname)s %(message)s',
+                        datefmt='%Y-%m-%d %H:%M:%S',
+                        level=logging.DEBUG)
+    logging.info("Database rebuild starting...")
 
-# NHU
-create_dimension(
-    metadata_df['NHU_differentiation'],
-    'NHU',
-    'NhuDifferentiation',
-    conn
-)
+    # Load all data
+    all_data_df = merge_all_datasets(args.data_folder_path)
+    metadata_df = load_metadata_tsv(args.metadata_file_path)
+    logging.info(f"Combined expression data has shape {all_data_df.shape}")
+    logging.info(f"Read metadata with shape {metadata_df.shape}")
 
-# Dataset_Subset
-create_dimension(
-    metadata_df['subset_name'],
-    'DatasetSubset',
-    'SubsetName',
-    conn
-)
+    # Convert all columns except first ('genes') to numeric, setting invalid values
+    # to NaN
+    all_data_df.iloc[:, 1:] = all_data_df.iloc[:, 1:].apply(pd.to_numeric, errors='coerce')
 
-# Dataset
-create_dimension(
-    metadata_df['Dataset'],
-    'Dataset',
-    'DatasetName',
-    conn
-)
+    # Order of table creation + population
+    # - NHU
+    # - Dataset_Subset
+    # - Dataset
+    # - Tissue
+    # - Substrate
+    # - Gender
+    # - Tumor_Stage
+    # - Vital_Status
+    # - Gene
+    # - Sample
+    # - Gene_Expression
 
-# Tissue
-create_dimension(
-    metadata_df['Tissue'],
-    'Tissue',
-    'TissueName',
-    conn
-)
+    # Gene
+    create_dimension(all_data_df['genes'], 'Gene', 'GeneName', conn)
 
-# Substrate
-create_dimension(
-    metadata_df['Substrate'],
-    'Substrate',
-    'SubstrateType',
-    conn
-)
+    # NHU
+    create_dimension(
+        metadata_df['NHU_differentiation'],
+        'NHU',
+        'NhuDifferentiation',
+        conn
+    )
 
-# Gender
-create_dimension(
-    metadata_df['Gender'],
-    'Gender',
-    'Gender',
-    conn
-)
+    # Dataset_Subset
+    create_dimension(
+        metadata_df['subset_name'],
+        'DatasetSubset',
+        'SubsetName',
+        conn
+    )
 
-# Tumor_Stage
-create_dimension(
-    metadata_df['tumor_stage'],
-    'TumorStage',
-    'Stage',
-    conn
-)
+    # Dataset
+    create_dimension(
+        metadata_df['Dataset'],
+        'Dataset',
+        'DatasetName',
+        conn
+    )
 
-# Vital_Status
-create_dimension(
-    metadata_df['vital_status'],
-    'VitalStatus',
-    'Status',
-    conn
-)
+    # Tissue
+    create_dimension(
+        metadata_df['Tissue'],
+        'Tissue',
+        'TissueName',
+        conn
+    )
 
-# Sample
-# Restrict to columns of interest
-metadata_cols = [
-    ("Sample", "SampleId"),
-    ("subset_name", "SubsetName"),
-    ("Dataset", "DatasetName"),
-    ("Tissue", "TissueName"),
-    ("Substrate", "SubstrateType"),
-    ("Gender", "Gender"),
-    ("tumor_stage", "Stage"),
-    ("vital_status", "Status"),
-    ("NHU_differentiation", "NhuDifferentiation"),
-    ("TER", "TER"),
-    ("days_to_death", "DaysToDeath")
-]
-metadata_df = metadata_df[[x[0] for x in metadata_cols]]
-metadata_df.rename(columns={ x[0]: x[1] for x in metadata_cols }, inplace=True)
-# Clean error codes and missingness
-metadata_df.replace({'?': None, 'NaN': None, '': None}, inplace=True)
-metadata_df = metadata_df.where(pd.notna(metadata_df), None)
-# Insert into db
-insert_into_db(metadata_df, "Sample", conn)
+    # Substrate
+    create_dimension(
+        metadata_df['Substrate'],
+        'Substrate',
+        'SubstrateType',
+        conn
+    )
 
-# Gene_Expression
-# Restrict to sample IDs that are in metadata
-all_samples = metadata_df['SampleId'].unique()
-all_cols = np.append(['genes'], all_samples)
-all_data_df = all_data_df[all_cols].rename(columns={'genes': 'GeneName'})
+    # Gender
+    create_dimension(
+        metadata_df['Gender'],
+        'Gender',
+        'Gender',
+        conn
+    )
 
-# Insert into DB
-chunked_melt_insert(
-    all_data_df,
-    id_vars=['GeneName'],
-    var_name='SampleId',
-    value_name='TPM',
-    chunk_size_rows=5000,
-    chunk_size_cols=100
-)
-print("Successfully populated GeneExpression")
+    # Tumor_Stage
+    create_dimension(
+        metadata_df['tumor_stage'],
+        'TumorStage',
+        'Stage',
+        conn
+    )
 
-# Create indexes for faster querying
-# Rename to PascalCase
-cursor.execute("CREATE INDEX IF NOT EXISTS IdxGeneExpressionGeneName ON GeneExpression(GeneName);")
-print("created index for GeneName")
-cursor.execute("CREATE INDEX IF NOT EXISTS IdxSampleDatasetName ON Sample(DatasetName);")
-print("created index for Sample")
+    # Vital_Status
+    create_dimension(
+        metadata_df['vital_status'],
+        'VitalStatus',
+        'Status',
+        conn
+    )
 
-# Save changes
-conn.commit()
-conn.close()
+    # Sample
+    # Restrict to columns of interest
+    metadata_cols = [
+        ("Sample", "SampleId"),
+        ("subset_name", "SubsetName"),
+        ("Dataset", "DatasetName"),
+        ("Tissue", "TissueName"),
+        ("Substrate", "SubstrateType"),
+        ("Gender", "Gender"),
+        ("tumor_stage", "Stage"),
+        ("vital_status", "Status"),
+        ("NHU_differentiation", "NhuDifferentiation"),
+        ("TER", "TER"),
+        ("days_to_death", "DaysToDeath")
+    ]
+    metadata_df = metadata_df[[x[0] for x in metadata_cols]]
+    metadata_df.rename(columns={ x[0]: x[1] for x in metadata_cols }, inplace=True)
+    # Clean error codes and missingness
+    metadata_df.replace({'?': None, 'NaN': None, '': None}, inplace=True)
+    metadata_df = metadata_df.where(pd.notna(metadata_df), None)
+    # Insert into db
+    insert_into_db(metadata_df, "Sample", conn)
+
+    # Gene_Expression
+    # Restrict to sample IDs that are in metadata
+    all_samples = metadata_df['SampleId'].unique()
+    all_cols = np.append(['genes'], all_samples)
+    all_data_df = all_data_df[all_cols].rename(columns={'genes': 'GeneName'})
+
+    # Insert into DB
+    chunked_melt_insert(
+        all_data_df,
+        id_vars=['GeneName'],
+        var_name='SampleId',
+        value_name='TPM',
+        chunk_size_rows=5000,
+        chunk_size_cols=100,
+        conn=conn
+    )
+    logging.info(f"Successfully populated GeneExpression with {all_data_df.shape[0]} rows")
+
+    # Create indexes for faster querying
+    cursor.execute("CREATE INDEX IF NOT EXISTS IdxGeneExpressionGeneName ON GeneExpression(GeneName);")
+    logging.info("Created index for GeneName")
+    cursor.execute("CREATE INDEX IF NOT EXISTS IdxSampleDatasetName ON Sample(DatasetName);")
+    logging.info("Created index for Sample")
+
+    logging.info("Database built successfully")
+
+    # Save changes
+    conn.commit()
+    conn.close()
+
+if __name__ == "__main__":
+    main()
