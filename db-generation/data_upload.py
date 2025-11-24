@@ -2,10 +2,11 @@
 
 # WORKS ON EMPTY DATABASE
 import argparse
+import logging
 import os
+import sqlite3
 import numpy as np
 import pandas as pd
-import sqlite3
 
 parser = argparse.ArgumentParser()
 parser.add_argument("db_path", type=str,
@@ -14,6 +15,8 @@ parser.add_argument("metadata_file_path", type=str,
                     help="path to the metadata file")
 parser.add_argument("data_folder_path", type=str,
                     help="path to the data folder")
+parser.add_argument("log_file", type=str,
+                    help="path to the file to append logs to")
 args = parser.parse_args()
 
 # Connect to the existing SQLite database
@@ -23,6 +26,13 @@ cursor = conn.cursor()
 
 # Enable foreign key constraints
 conn.execute("PRAGMA foreign_keys = ON;")
+
+# Setup logging
+logging.basicConfig(filename=args.log_file,
+                    filemode='a',
+                    format='%(asctime)s,%(msecs)03d %(name)s %(levelname)s %(message)s',
+                    datefmt='%Y-%m-%d %H:%M:%S',
+                    level=logging.DEBUG)
 
 def prepare_dimension_table(values, name, vals_to_remove=['?']):
     """
@@ -64,7 +74,7 @@ def insert_into_db(df, table_name, conn, message=True):
     #Insert a DataFrame (clean) into the specified SQLite table.
     df.to_sql(table_name, conn, if_exists='append', chunksize=5000, index=False)
     if message:
-        print(f"Successfully populated {table_name}")
+        logging.info(f"Successfully populated {table_name} with {df.shape[0]} rows")
 
 
 def create_dimension(values, table_name, column_name, conn, vals_to_remove=['?']):
@@ -109,7 +119,7 @@ def merge_all_datasets(base_path):
             continue
 
         df = pd.read_csv(os.path.join(base_path, filename), delimiter="\t")
-        print(f"Dataset: {filename} Shape {df.shape}")
+        logging.info(f"Found dataset: {filename} {df.shape}")
 
         if first_file:
             all_tsv = df
@@ -162,6 +172,8 @@ def chunked_melt_insert(df, id_vars, var_name, value_name, chunk_size_rows,
 # Load all data
 all_data_df = merge_all_datasets(args.data_folder_path)
 metadata_df = load_metadata_tsv(args.metadata_file_path)
+logging.info(f"Combined expression data has shape {all_data_df.shape}")
+logging.info(f"Read metadata with shape {metadata_df.shape}")
 
 # Convert all columns except first ('genes') to numeric, setting invalid values
 # to NaN
@@ -285,14 +297,15 @@ chunked_melt_insert(
     chunk_size_rows=5000,
     chunk_size_cols=100
 )
-print("Successfully populated GeneExpression")
+logging.info(f"Successfully populated GeneExpression with {all_data_df.shape[0]} rows")
 
 # Create indexes for faster querying
-# Rename to PascalCase
 cursor.execute("CREATE INDEX IF NOT EXISTS IdxGeneExpressionGeneName ON GeneExpression(GeneName);")
-print("created index for GeneName")
+logging.info("Created index for GeneName")
 cursor.execute("CREATE INDEX IF NOT EXISTS IdxSampleDatasetName ON Sample(DatasetName);")
-print("created index for Sample")
+logging.info("Created index for Sample")
+
+logging.info("Database built successfully")
 
 # Save changes
 conn.commit()
