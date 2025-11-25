@@ -9,4 +9,4 @@ services:
     ports:
       - "127.0.0.1:8050:8080"
     volumes:
-      - ../data:/usr/local/app/data
+      - ../app_data:/usr/local/app/data
