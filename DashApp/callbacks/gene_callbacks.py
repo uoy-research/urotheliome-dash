@@ -115,13 +115,21 @@ def register_callbacks(app) -> None:
             Input("plot-type-radio", "value"),
             Input("tabs", "active_tab"),
             Input("ter-input", "value"),
-            Input("y-axis-radio","value")
+            Input("y-axis-radio-viz", "value")
         ],
         state=[State("gene-expression-plot", "figure")],
         prevent_initial_call=True,
     )
-    def update_plot(selected_genes: str, selected_datasets: list, x_axis: str, plot_type: str, 
-                   active_tab: str, ter_threshold: int, y_axis_type: str, current_figure: Dict[str, Any]) -> Tuple[Dict[str, Any], str, str, bool]:
+    def update_plot(
+        selected_genes: str,
+        selected_datasets: list,
+        x_axis: str,
+        plot_type: str,
+        active_tab: str,
+        ter_threshold: int,
+        y_axis_type: str,
+        current_figure: Dict[str, Any]
+    ) -> Tuple[Dict[str, Any], str, str, bool]:
         ctx = callback_context
         if not ctx.triggered or active_tab != "gene-visualization" and ctx.triggered[0]['prop_id'].split('.')[0] != "tabs":
             return no_update, no_update, no_update, no_update
@@ -172,6 +180,15 @@ def register_callbacks(app) -> None:
             hover_cols = ['GeneName', 'DatasetName', 'SubsetName', 'TissueName',
                           'SubstrateType', 'Gender', 'Stage', 'Status',
                           'NhuDifferentiation', 'SampleId', 'TER']
+
+            #Update y-axis
+            transforms = {
+                'linear': lambda x: x,
+                'log10': lambda x: np.log10(x+1),
+                'log2': lambda x: np.log2(x+1)
+            }
+            transform = transforms[y_axis_type]
+            data['TPM'] = transform(data['TPM'])
             
             # Create plot with dynamic x-axis and plot type
             if plot_type == "violin":
@@ -184,12 +201,6 @@ def register_callbacks(app) -> None:
                 fig = px.strip(data, x=x_axis, y='TPM', color="DatasetName", 
                                hover_data=hover_cols)
 
-            #Update y-axis
-            if y_axis_type == "linear":
-                fig.update_yaxes(type="linear")
-            else:
-                fig.update_yaxes(type="log")    
-            
             # Update layout
             plot_title = f"Expression of {(selected_genes)} by {x_axis}"
             if ter_threshold > 0:
@@ -220,7 +231,7 @@ def register_callbacks(app) -> None:
             Input("dataset-radio", "value"),
             Input("tabs", "active_tab"),
             Input("ter-input", "value"),
-            Input("y-axis-radio","value")
+            Input("y-axis-radio-comparison","value")
         ],
         state=[State("gene-comparison-plot", "figure")],
         prevent_initial_call=True,
@@ -326,26 +337,32 @@ def register_callbacks(app) -> None:
                 return create_empty_comparison_plot(gene1, gene2, message, ter_threshold), html.Strong(message), True
                 
             # Create scatter plot
-            hover_data = {'SampleId': True, f'{gene1}_TPM': True, f'{gene2}_TPM': True}
+            col1 = f'{gene1}_TPM'
+            col2 = f'{gene2}_TPM'
+            hover_data = {'SampleId': True, col1: True, col2: True}
             for col in available_metadata:
                 if col in merged_data.columns:
                     hover_data[col] = True
+
+            #Update y-axis
+            transforms = {
+                'linear': lambda x: x,
+                'log10': lambda x: np.log10(x+1),
+                'log2': lambda x: np.log2(x+1)
+            }
+            transform = transforms[y_axis_type]
+            merged_data[col1] = transform(merged_data[col1])
+            merged_data[col2] = transform(merged_data[col2])
             
             fig = px.scatter(
                 merged_data, 
-                x=f'{gene1}_TPM', 
-                y=f'{gene2}_TPM',
+                x=col1,
+                y=col2,
                 color="DatasetName" if "DatasetName" in merged_data.columns else None,
                 hover_data=hover_data,
                 opacity=0.7,
                 size_max=10
             )
-
-            #Update y-axis
-            if y_axis_type == "linear":
-                fig.update_yaxes(type="linear")
-            else:
-                fig.update_yaxes(type="log")
             
             # Update layout
             plot_title = f"Gene Comparison: {gene1} vs {gene2}"
@@ -371,14 +388,16 @@ def register_callbacks(app) -> None:
             
             # Find max value for axis ranges
             max_val = max(
-                merged_data[f'{gene1}_TPM'].max(), 
-                merged_data[f'{gene2}_TPM'].max()
+                merged_data[col1].max(), 
+                merged_data[col2].max()
             )
             
+            # TODO calculate these before transform data
+            # TODO FROM HERE
             # Add regression line if there are enough data points
             if len(merged_data) > 1:
-                x_values = merged_data[f'{gene1}_TPM'].values
-                y_values = merged_data[f'{gene2}_TPM'].values
+                x_values = merged_data[col1].values
+                y_values = merged_data[col2].values
                 
                 #print(f"x_values: {x_values}")
                 #print(f"y_values: {y_values}")
@@ -401,6 +420,8 @@ def register_callbacks(app) -> None:
                 # Add regression line
                 x_reg = np.array([0, max_val])
                 y_reg = intercept + slope * x_reg
+
+                # TODO UP TO HERE
                 
                 fig.add_trace(
                     go.Scatter(

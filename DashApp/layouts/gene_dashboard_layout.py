@@ -1,7 +1,7 @@
 from dash import html, dcc
 import dash_bootstrap_components as dbc
 from components.dropdowns import gene_dropdown, xaxis_dropdown, gene_comparison_dropdown_1, gene_comparison_dropdown_2
-from components.radio_buttons import dataset_radio, ter_radio, y_axis_radio
+from components.radio_buttons import dataset_radio, ter_radio, y_axis_radio_viz, y_axis_radio_comparison
 from components.plots import gene_expression_plot, gene_comparison_plot
 
 def create_control_section(title, controls):
@@ -68,7 +68,7 @@ def gene_dashboard_layout() -> html.Div:
         ),
 
         html.Label("Y-axis Type", htmlFor="y-axis-radio", className="fw-bold small mt-2"),
-        y_axis_radio(),
+        y_axis_radio_viz(),
         html.Hr(className="my-2"),
     ]
     
@@ -82,7 +82,7 @@ def gene_dashboard_layout() -> html.Div:
         gene_comparison_dropdown_2(),
 
         html.Label("Y-axis Type", htmlFor="y-axis-radio", className="fw-bold small mt-2"),
-        y_axis_radio(),
+        y_axis_radio_comparison(),
         html.Hr(className="my-2"),
     ]
 
