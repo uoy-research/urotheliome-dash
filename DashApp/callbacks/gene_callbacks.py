@@ -344,6 +344,23 @@ def register_callbacks(app) -> None:
                 if col in merged_data.columns:
                     hover_data[col] = True
 
+            x_values = merged_data[col1].values
+            y_values = merged_data[col2].values
+            
+            #print(f"x_values: {x_values}")
+            #print(f"y_values: {y_values}")
+            
+            # Calculate Pearson correlation
+            pearson_corr, p_value = stats.pearsonr(x_values, y_values)
+            
+            # Calculate Spearman correlation
+            spearman_corr, spearman_p = stats.spearmanr(x_values, y_values)
+
+            # Calculate Pearson correlation for log2(TPM+1)
+            log_x = np.log2(x_values + 1)
+            log_y = np.log2(y_values + 1)
+            pearson_corr_log, p_value_log = stats.pearsonr(log_x, log_y)
+
             #Update y-axis
             transforms = {
                 'linear': lambda x: x,
@@ -392,26 +409,8 @@ def register_callbacks(app) -> None:
                 merged_data[col2].max()
             )
             
-            # TODO calculate these before transform data
-            # TODO FROM HERE
             # Add regression line if there are enough data points
             if len(merged_data) > 1:
-                x_values = merged_data[col1].values
-                y_values = merged_data[col2].values
-                
-                #print(f"x_values: {x_values}")
-                #print(f"y_values: {y_values}")
-                
-                # Calculate Pearson correlation
-                pearson_corr, p_value = stats.pearsonr(x_values, y_values)
-                
-                # Calculate Spearman correlation
-                spearman_corr, spearman_p = stats.spearmanr(x_values, y_values)
-
-                # Calculate Pearson correlation for log2(TPM+1)
-                log_x = np.log2(x_values + 1)
-                log_y = np.log2(y_values + 1)
-                pearson_corr_log, p_value_log = stats.pearsonr(log_x, log_y)
                 
                 # Standard regression line calculation
                 slope, intercept, r_value, p_value, std_err = stats.linregress(x_values, y_values)
@@ -420,8 +419,6 @@ def register_callbacks(app) -> None:
                 # Add regression line
                 x_reg = np.array([0, max_val])
                 y_reg = intercept + slope * x_reg
-
-                # TODO UP TO HERE
                 
                 fig.add_trace(
                     go.Scatter(
