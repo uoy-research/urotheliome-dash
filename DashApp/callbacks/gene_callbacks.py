@@ -412,6 +412,9 @@ def register_callbacks(app) -> None:
             # Add regression line if there are enough data points
             if len(merged_data) > 1:
                 
+                x_values = merged_data[col1].values
+                y_values = merged_data[col2].values
+
                 # Standard regression line calculation
                 slope, intercept, r_value, p_value, std_err = stats.linregress(x_values, y_values)
                 r_squared = r_value**2
