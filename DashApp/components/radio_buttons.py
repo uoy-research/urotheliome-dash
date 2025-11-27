@@ -53,3 +53,37 @@ def ter_radio():
             id="ter-input",
         ),
     ])
+
+def y_axis_radio_viz():
+
+    return html.Div([
+        # y-axis radio buttons
+        dbc.RadioItems(
+            options=[
+                {"label": "Linear", "value": "linear"},
+                {"label": "Log2", "value": "log2"},
+                {"label": "Log10", "value": "log10"},
+            ],
+            value="linear",
+            inline=True,
+            id="y-axis-radio-viz",
+            className="mb-2 small"
+        ),
+    ])
+
+def y_axis_radio_comparison():
+
+    return html.Div([
+        # y-axis radio buttons
+        dbc.RadioItems(
+            options=[
+                {"label": "Linear", "value": "linear"},
+                {"label": "Log2", "value": "log2"},
+                {"label": "Log10", "value": "log10"},
+            ],
+            value="linear",
+            inline=True,
+            id="y-axis-radio-comparison",
+            className="mb-2 small"
+        ),
+    ])
